@@ -1,5 +1,6 @@
 from nltk.corpus import cmudict
 from nltk import pos_tag, word_tokenize, sent_tokenize
+from utils import memo
 
 
 PUNCTUATION_TAGS = ['.', ':', ',']
@@ -77,6 +78,7 @@ def word_counts(text):
     return result
 
 
+@memo
 def num_syllables(word, UNIQUE=True):
     """
     Returns the number of syllables in a word.
