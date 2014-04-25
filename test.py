@@ -12,6 +12,12 @@ class AnalyzerTests(unittest.TestCase):
         confirm("hibachi", 3)
         confirm("ready", 2)
 
+    def test_stress(self):
+        self.assertEqual(analyzer.stress("fire"),
+                         [('F', None), ('AY', 1), ('ER', 0)])
+        self.assertEqual(
+            analyzer.stress("fire", SYLLABLES=False), [None, 1, 0])
+
     def test_syllable_counts(self):
         self.assertEqual(analyzer.syllable_counts("Okay; I am ready."),
                          [([2], ';'), ([1, 1, 2], '.')])
@@ -19,6 +25,13 @@ class AnalyzerTests(unittest.TestCase):
     def test_word_counts(self):
         self.assertEqual(analyzer.word_counts("Okay; I am ready. Go"),
                          [(1, ';'), (3, '.'), (1, None)])
+
+    def test_stress_counts(self):
+        self.assertEqual(analyzer.stress_counts("Okay; I am ready."),
+                         [([('OW', 2), ('K', None), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', None), ('R', None), ('EH', 1), ('D', None), ('IY', 0)], '.')])
+        self.assertEqual(
+            analyzer.stress_counts("Okay; I am ready.", SYLLABLES=False),
+            [([2, None, 1], ';'), ([1, 1, None, None, 1, None, 0], '.')])
 
 
 if __name__ == "__main__":
