@@ -14,9 +14,9 @@ class AnalyzerTests(unittest.TestCase):
 
     def test_stress(self):
         self.assertEqual(analyzer.stress("fire"),
-                         [('F', None), ('AY', 1), ('ER', 0)])
+                         [('F', 0), ('AY', 1), ('ER', -1)])
         self.assertEqual(
-            analyzer.stress("fire", SYLLABLES=False), [None, 1, 0])
+            analyzer.stress("fire", SYLLABLES=False), [0, 1, -1])
 
     def test_syllable_counts(self):
         self.assertEqual(analyzer.syllable_counts("Okay; I am ready."),
@@ -28,10 +28,10 @@ class AnalyzerTests(unittest.TestCase):
 
     def test_stress_counts(self):
         self.assertEqual(analyzer.stress_counts("Okay; I am ready."),
-                         [([('OW', 2), ('K', None), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', None), ('R', None), ('EH', 1), ('D', None), ('IY', 0)], '.')])
+                         [([('OW', 2), ('K', 0), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', 0), ('R', 0), ('EH', 1), ('D', 0), ('IY', -1)], '.')])
         self.assertEqual(
             analyzer.stress_counts("Okay; I am ready.", SYLLABLES=False),
-            [([2, None, 1], ';'), ([1, 1, None, None, 1, None, 0], '.')])
+            [([2, 0, 1], ';'), ([1, 1, 0, 0, 1, 0, -1], '.')])
 
 
 if __name__ == "__main__":

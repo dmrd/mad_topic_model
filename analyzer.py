@@ -86,7 +86,7 @@ def stress_counts(text, SYLLABLES=True):
     text ends without punctuation, the final punctuation value will be None.
     E.g.:
     >>> stress_counts("Okay; I am ready.")
-    >>> [([('OW', 2), ('K', None), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', None), ('R', None), ('EH', 1), ('D', None), ('IY', 0)], '.')]
+    >>> [([('OW', 2), ('K', 0), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', 0), ('R', 0), ('EH', 1), ('D', 0), ('IY', -1)], '.')]
     >>> stress_counts("Okay; I am ready.", SYLLABLES=False)
     >>> [([2, None, 1], ';'), ([1, 1, None, None, 1, None, 0], '.')]
     """
@@ -126,18 +126,21 @@ def num_syllables(word, UNIQUE=True):
 def stress(word, SYLLABLES=True):
     """
     Maps a word to its syllables and their stresses. (1) indicates primary,
-    (2) secondary, and (0) no stress, while None indicates that there is no
-    relevant stress information. If SYLLABLES is False, only the stress
-    information is returned. E.g.:
+    (2) secondary, and (-1) neutral, and (0) no stress. If SYLLABLES is False,
+    only the stress information is returned. E.g.:
     >>> stress("fire")
-    >>> [('F', None), ('AY', 1), ('ER', 0)]
+    >>> [('F', 0), ('AY', 1), ('ER', -1)]
     >>> stress("fire", SYLLABLES=False)
-    >>> [None, 1, 0]
+    >>> [0, 1, -1]
     """
     def extract_stress(s):
         if s[-1].isdigit():
-            return (s[:-1], int(s[-1]))
-        return (s, None)
+            val = int(s[-1])
+            if val == 0:
+                return (s[:-1], -1)
+            else:
+                return (s[:-1], val)
+        return (s, 0)
     syllables = d[word.lower()][0]
     stresses = map(extract_stress, syllables)
     if not SYLLABLES:
