@@ -28,7 +28,7 @@ def syllabic_representation(text):
     """
     def to_syllables((word, tag)):
         if tag in PUNCTUATION_TAGS:
-            return (word, tag)
+            return word
         return num_syllables(word)
     return map(to_syllables, tag_text(text))
 
