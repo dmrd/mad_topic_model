@@ -31,16 +31,14 @@ for username_counter, username in enumerate(usernames):
         browser.evaluate_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(1)
 
-    try:
-        for element in browser.find_by_css(".inline_editor_value"):
-            try:
-                text = element.find_by_css("div").first.find_by_css("div").first.text
-                text_ascii = text.encode('ascii', 'replace')
-                posts.append((username,text_ascii))
-            except:
-                pass
-    except:
-        pass
+    for element in browser.find_by_css(".inline_editor_value"):
+        try:
+            text = element.find_by_css("div").first.find_by_css("div").first.text
+            text_ascii = text.encode('ascii', 'replace')
+            posts.append((username,text_ascii))
+        except:
+            pass
+
 
     with open("output.csv", "a") as f:
         csv_out = csv.writer(f)
