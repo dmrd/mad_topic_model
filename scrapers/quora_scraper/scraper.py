@@ -24,7 +24,13 @@ for username_counter, username in enumerate(usernames):
 
     browser.visit("http://www.quora.com/%s/answers" % username)
 
-    browser.find_by_css(".cancel").first.click()
+    # get rid of the login overlay
+    try:
+        browser.find_by_css(".cancel").first.click()
+        time.sleep(1)
+    except:
+        pass
+
 
     # scroll to bottom several times
     for i in range(5):
