@@ -1,6 +1,5 @@
 from nltk.corpus import cmudict
 from nltk import pos_tag, word_tokenize, sent_tokenize
-from utils import memo
 
 
 PUNCTUATION_TAGS = ['.', ':', ',']
@@ -88,7 +87,7 @@ def stress_counts(text, SYLLABLES=True):
     >>> stress_counts("Okay; I am ready.")
     >>> [([('OW', 2), ('K', 0), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', 0), ('R', 0), ('EH', 1), ('D', 0), ('IY', -1)], '.')]
     >>> stress_counts("Okay; I am ready.", SYLLABLES=False)
-    >>> [([2, None, 1], ';'), ([1, 1, None, None, 1, None, 0], '.')]
+    >>> [([2, 0, 1], ';'), ([1, 1, 0, 0, 1, 0, -1], '.')]
     """
     result = []
     temp = []

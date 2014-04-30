@@ -1,5 +1,5 @@
 import unittest
-import analyzer
+import features.analyzer as analyzer
 
 
 class AnalyzerTests(unittest.TestCase):
