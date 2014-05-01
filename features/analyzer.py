@@ -116,31 +116,6 @@ def word_counts(text):
     return result
 
 
-def stress_counts_by_phone(text, PHONES=True):
-    """
-    Returns a list of (stress_counts, punctuation) pairs, where stress
-    is evaluated on a per-phone basis, and stress_counts
-    is a list of integers and None values preceding the punctuation. If the
-    text ends without punctuation, the final punctuation value will be None.
-    E.g.:
-    >>> stress_counts_by_phone("Okay; I am ready.")
-    >>> [([('OW', 2), ('K', 0), ('EY', 1)], ';'), ([('AY', 1), ('AE', 1), ('M', 0), ('R', 0), ('EH', 1), ('D', 0), ('IY', -1)], '.')]
-    >>> stress_counts_by_phone("Okay; I am ready.", SYLLABLES=False)
-    >>> [([2, 0, 1], ';'), ([1, 1, 0, 0, 1, 0, -1], '.')]
-    """
-    result = []
-    temp = []
-    for (word, tag) in tag_text(text):
-        if tag in PUNCTUATION_TAGS:
-            result.append((temp, word))
-            temp = []
-        else:
-            temp += stress(word, PHONES=PHONES)
-    if temp:
-        result.append((temp, None))
-    return result
-
-
 def stress_counts_by_syllable(text):
     """
     Returns a list of (stress_counts, punctuation) pairs, where stress
@@ -149,10 +124,19 @@ def stress_counts_by_syllable(text):
     text ends without punctuation, the final punctuation value will be None.
     E.g.:
     >>> stress_counts_by_syllable("Okay; I am ready.")
-    >>> [([2, 1], ';'), ([1, 1, 1, -1], '.')]
+    >>> [([2, 1], ';'), ([1, 1, 1, 0], '.')]
     """
-    counts = stress_counts_by_phone(text, PHONES=False)
-    return [(filter(lambda x: x != 0, run), punc) for (run, punc) in counts]
+    result = []
+    temp = []
+    for (word, tag) in tag_text(text):
+        if tag in PUNCTUATION_TAGS:
+            result.append((temp, word))
+            temp = []
+        else:
+            temp += stress(word)
+    if temp:
+        result.append((temp, None))
+    return result
 
 
 def num_syllables(word, UNIQUE=True):
@@ -175,26 +159,14 @@ def num_syllables(word, UNIQUE=True):
         return nsyls
 
 
-def stress(word, PHONES=True):
+def stress(word):
     """
     Maps a word to its phones and their stresses. (1) indicates primary,
-    (2) secondary, and (-1) neutral, and (0) no stress. If PHONES is False,
-    only the stress information is returned. E.g.:
+    (2) secondary, and (0) no stress. E.g.:
     >>> stress("fire")
-    >>> [('F', 0), ('AY', 1), ('ER', -1)]
-    >>> stress("fire", SYLLABLES=False)
-    >>> [0, 1, -1]
+    >>> [1, 0]
     """
     def extract_stress(s):
-        if s[-1].isdigit():
-            val = int(s[-1])
-            if val == 0:
-                return (s[:-1], -1)
-            else:
-                return (s[:-1], val)
-        return (s, 0)
-    syllables = d[word.lower()][0]
-    stresses = map(extract_stress, syllables)
-    if not PHONES:
-        return map(lambda x: x[1], stresses)
-    return stresses
+        return int(s[-1])
+    syllables = filter(lambda x: x[-1].isdigit(), d[word.lower()][0])
+    return map(extract_stress, syllables)
