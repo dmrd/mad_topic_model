@@ -4,6 +4,10 @@ import features.analyzer as analyzer
 
 class AnalyzerTests(unittest.TestCase):
 
+    def test_fuzzy_lookup(self):
+        self.assertEqual(analyzer.cmu_lookup("Dohan"),
+                         ['D', 'R', 'OW1', 'AH0', 'N'])
+
     def test_syllables(self):
         def confirm(s, n):
             self.assertEqual(analyzer.num_syllables(s), n)

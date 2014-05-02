@@ -1,10 +1,29 @@
 from nltk.corpus import cmudict
 from nltk.util import ngrams
 from nltk import pos_tag, word_tokenize, sent_tokenize
+from Levenshtein import ratio
 
 
 PUNCTUATION_TAGS = ['.', ':', ',']
 d = cmudict.dict()
+
+
+def cmu_lookup(s, APPROX=True):
+    """
+    A wrapper around the CMU Dictionary lookup that uses approximate
+    matching (via Levenshtein distance) for unknown words, when APPROX
+    is True. E.g.:
+    >>> cmu_lookup("Dohan")
+    >>> ['D', 'R', 'OW1', 'AH0', 'N'] # Closest match: drohan
+    """
+    s = s.lower()
+    try:
+        return d[s][0]
+    except KeyError:
+        if APPROX:
+            (score, match) = max((ratio(s, t), t) for t in d)
+            return d[match][0]
+        raise
 
 
 def syllable_ngrams(text, n):
@@ -139,24 +158,11 @@ def stress_counts_by_syllable(text):
     return result
 
 
-def num_syllables(word, UNIQUE=True):
+def num_syllables(word):
     """
     Returns the number of syllables in a word.
-
-    Arguments:
-    word -- a single word to be broken into syllables
-    UNIQUE -- some words have multiple phonetic representations. If UNIQUE is
-              True, the first such representation is used and an integer is
-              returned. If UNIQUE is False, a list of syallabic counts is
-              returned, one for each representation.
     """
-    nsyls = [len(list(y for y in x if y[-1].isdigit()))
-             for x in d[word.lower()]]
-
-    if UNIQUE:
-        return nsyls[0]
-    else:
-        return nsyls
+    return len(list(y for y in cmu_lookup(word) if y[-1].isdigit()))
 
 
 def stress(word):
@@ -168,5 +174,5 @@ def stress(word):
     """
     def extract_stress(s):
         return int(s[-1])
-    syllables = filter(lambda x: x[-1].isdigit(), d[word.lower()][0])
+    syllables = filter(lambda x: x[-1].isdigit(), cmu_lookup(word))
     return map(extract_stress, syllables)
