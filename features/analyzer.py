@@ -135,7 +135,7 @@ def word_counts(text):
     return result
 
 
-def stress_counts_by_syllable(text):
+def stress_counts_by_syllable(text, SECONDARY=True):
     """
     Returns a list of (stress_counts, punctuation) pairs, where stress
     is evaluated on a per-syllable basis, and stress_counts
@@ -152,7 +152,7 @@ def stress_counts_by_syllable(text):
             result.append((temp, word))
             temp = []
         else:
-            temp += stress(word)
+            temp += stress(word, SECONDARY=SECONDARY)
     if temp:
         result.append((temp, None))
     return result
@@ -165,14 +165,18 @@ def num_syllables(word):
     return len(list(y for y in cmu_lookup(word) if y[-1].isdigit()))
 
 
-def stress(word):
+def stress(word, SECONDARY=True):
     """
     Maps a word to its phones and their stresses. (1) indicates primary,
-    (2) secondary, and (0) no stress. E.g.:
+    (2) secondary, and (0) no stress. If SECONDARY is False, no distinction
+    is made between types (1) and (2) stress. E.g.:
     >>> stress("fire")
     >>> [1, 0]
     """
     def extract_stress(s):
-        return int(s[-1])
+        n = int(s[-1])
+        if not SECONDARY and n > 0:
+            return 1
+        return n
     syllables = filter(lambda x: x[-1].isdigit(), cmu_lookup(word))
     return map(extract_stress, syllables)
