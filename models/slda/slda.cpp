@@ -233,7 +233,7 @@ void slda::initGlobal(int num_docs_, int docs_per_, int num_classes)
     int docs_per = docs_per_
 }
 
-suffstats * slda::new_suffstats(, int t)
+suffstats * slda::new_suffstats(int t)
 {
     suffstats * ss = new suffstats;
 
@@ -249,17 +249,14 @@ suffstats * slda::new_suffstats(, int t)
     }
 
     int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
-    ss->z_bar = new z_stat * [num_classes]
-    for (int a = 0; a < num_classes; a++)
+    ss->z_bar = new z_stat [num_docs]   
+    for (int d = 0; d < num_docs; d ++)
     {
-        ss->z_bar[a] =  new z_stat [docs_per[a]];
-        for (int d = 0; d < docs_per[a]; d ++)
-        {
-            ss->z_bar[a][d].z_bar_m = new double [num_topics[t]];
-            ss->z_bar[a][d].z_bar_var = new double [num_var_entries];
-            memset(ss->z_bar[a][d].z_bar_m, 0, sizeof(double)*num_topics[t]);
-            memset(ss->z_bar[a][d].z_bar_var, 0, sizeof(double)*num_var_entries);
-        }
+        ss->z_bar[d].z_bar_m = new double [num_topics[t]];
+        ss->z_bar[d].z_bar_var = new double [num_var_entries];
+        memset(ss->z_bar[d].z_bar_m, 0, sizeof(double)*num_topics[t]);
+        memset(ss->z_bar[d].z_bar_var, 0, sizeof(double)*num_var_entries);
+    
     }
 
     ss->labels = new int [num_docs];
@@ -284,14 +281,13 @@ void slda::zero_initialize_ss(suffstats * ss, int t)
     }
 
     int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
-    for (int a = 0; a < num_classes; a++)
+    
+    for (int d = 0; d < num_docs; d ++)
     {
-        for (int d = 0; d < docs_per[a]; d ++)
-        {
-            memset(ss->z_bar[a][d].z_bar_m, 0, sizeof(double)*num_topics[t]);
-            memset(ss->z_bar[a][d].z_bar_var, 0, sizeof(double)*num_var_entries);
-        }
+        memset(ss->z_bar[d].z_bar_m, 0, sizeof(double)*num_topics[t]);
+        memset(ss->z_bar[d].z_bar_var, 0, sizeof(double)*num_var_entries);
     }
+    
     ss->num_docs = 0;
 }
 
@@ -328,37 +324,34 @@ void slda::random_initialize_ss(suffstats * ss, corpus* c, int t)
         }
     }
 
-    for (a = 0; a < num_classes; a ++)
+    for (d = 0; d < num_docs; d ++)
     {
-
-    for (d = 0; d < docs_per[a]; d ++)
-    {
-        document * doc = c->docs[docMap(a,d)];
+        document * doc = c->docs[d];
         ss->labels[d] = doc->label; // in general, doc label = author
         ss->tot_labels[doc->label] ++;
 
         double total = 0.0;
         for (k = 0; k < num_topics[t]; k ++)
         {
-            ss->z_bar[a][d].z_bar_m[k] = gsl_rng_uniform(rng);
-            total += ss->z_bar[a][d].z_bar_m[k];
+            ss->z_bar[d].z_bar_m[k] = gsl_rng_uniform(rng);
+            total += ss->z_bar[d].z_bar_m[k];
         }
         for (k = 0; k < num_topics[t]; k ++)
         {
-            ss->z_bar[a][d].z_bar_m[k] /= total;
+            ss->z_bar[d].z_bar_m[k] /= total;
         }
         for (k = 0; k < num_topics[t]; k ++)
         {
-            for (j = k; j < num_topics; j ++)
+            for (j = k; j < num_topics[t]; j ++)
             {
                 idx = map_idx(k, j, num_topics[t]);
                 if (j == k)
-                    ss->z_bar[a][d].z_bar_var[idx] = ss->z_bar[a][d].z_bar_m[k] / (double)(doc->total);
+                    ss->z_bar[d].z_bar_var[idx] = ss->z_bar[d].z_bar_m[k] / (double)(doc->total);
                 else
-                    ss->z_bar[a][d].z_bar_var[idx] = 0.0;
+                    ss->z_bar[d].z_bar_var[idx] = 0.0;
 
-                ss->z_bar[a][d].z_bar_var[idx] -=
-                    ss->z_bar[a][d].z_bar_m[k] * ss->z_bar[a][d].z_bar_m[j] / (double)(doc->total);
+                ss->z_bar[d].z_bar_var[idx] -=
+                    ss->z_bar[d].z_bar_m[k] * ss->z_bar[d].z_bar_m[j] / (double)(doc->total);
             }
         }
         }
@@ -396,9 +389,8 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
         }
     }
 
-    for (a = 0; a < num_classes; a ++)
-    {
-    for (d = 0; d < docs_per[a]; d ++)
+
+    for (d = 0; d < num_docs; d ++)
     {
         document * doc = c->docs[docMap(a,d)];
         ss->labels[d] = doc->label;
@@ -407,12 +399,12 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
         double total = 0.0;
         for (k = 0; k < num_topics[t]; k ++)
         {
-            ss->z_bar[a][d].z_bar_m[k] = gsl_rng_uniform(rng);
+            ss->z_bar[d].z_bar_m[k] = gsl_rng_uniform(rng);
             total += ss->z_bar[d].z_bar_m[k];
         }
         for (k = 0; k < num_topics[t]; k ++)
         {
-            ss->z_bar[a][d].z_bar_m[k] /= total;
+            ss->z_bar[d].z_bar_m[k] /= total;
         }
         for (k = 0; k < num_topics[t]; k ++)
         {
@@ -420,15 +412,15 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
             {
                 idx = map_idx(k, j, num_topics[t]);
                 if (j == k)
-                    ss->z_bar[a][d].z_bar_var[idx] = ss->z_bar[a][d].z_bar_m[k] / (double)(doc->total);
+                    ss->z_bar[d].z_bar_var[idx] = ss->z_bar[d].z_bar_m[k] / (double)(doc->total[t]);
                 else
-                    ss->z_bar[a][d].z_bar_var[idx] = 0.0;
+                    ss->z_bar[d].z_bar_var[idx] = 0.0;
 
-                ss->z_bar[a][d].z_bar_var[idx] -=
-                    ss->z_bar[a][d].z_bar_m[k] * ss->z_bar[a][d].z_bar_m[j] / (double)(doc->total);
+                ss->z_bar[d].z_bar_var[idx] -=
+                    ss->z_bar[d].z_bar_m[k] * ss->z_bar[d].z_bar_m[j] / (double)(doc->total[t]);
             }
         }
-    }
+    
     }
     gsl_rng_free(rng);
 }
@@ -538,7 +530,10 @@ void slda::v_em(corpus * c, const settings * setting,
             for (d = 0; d < c->num_docs; d++)
             {
                 if ((d % 100) == 0) printf("document %d\n", d);
-                likelihood += doc_e_step(c->docs[d], var_gamma[t][d], phi[t], ss[t], ETA_UPDATE, setting);
+                if (eta_update == 1)
+                likelihood += slda_inference(doc, gamma, phi, setting);
+                for (t=0; t< num_word_types; t++)
+                    likelihood += doc_e_step(c->docs[d], var_gamma[t][d], phi[t], ss[t], ETA_UPDATE, setting);
             }
         }
 
@@ -684,10 +679,10 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
                         suffstats * ss, int eta_update, int _docNum, int t,const settings * setting)
 {
     double likelihood = 0.0;
-    if (eta_update == 1)
-        likelihood = slda_inference(doc, gamma, phi, setting);
-    else
-        likelihood = lda_inference(doc, gamma, phi, setting);
+    //if (eta_update == 1)
+    //    likelihood = slda_inference(doc, gamma, phi, setting);
+    //else
+     //   likelihood = lda_inference(doc, gamma, phi, setting);
 
     int d = _docNum;
 
@@ -705,26 +700,26 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
             ss->word_total_ss[k] += doc->counts[t][n]*phi[n][k];
 
             //statistics for each document of the supervised part
-            ss->z_bar[a][d].z_bar_m[k] += doc->counts[t][n] * phi[n][k]; //mean
+            ss->z_bar[d].z_bar_m[k] += doc->counts[t][n] * phi[n][k]; //mean
             for (i = k; i < num_topics; i ++) //variance
             {
                 idx = map_idx(k, i, num_topics[t]);
                 if (i == k)
-                    ss->z_bar[a][d].z_bar_var[idx] +=
+                    ss->z_bar[d].z_bar_var[idx] +=
                         doc->counts[t][n] * doc->counts[t][n] * phi[n][k]; 
 
-                ss->z_bar[a][d].z_bar_var[idx] -=
+                ss->z_bar[d].z_bar_var[idx] -=
                     doc->counts[t][n] * doc->counts[t][n] * phi[n][k] * phi[n][i];
             }
         }
     }
     for (k = 0; k < num_topics[t]; k++)
     {
-        ss->z_bar[a][d].z_bar_m[k] /= (double)(doc->total[t]);
+        ss->z_bar[d].z_bar_m[k] /= (double)(doc->total[t]);
     }
     for (i = 0; i < num_topics[t]*(num_topics[t]+1)/2; i ++)
     {
-        ss->z_bar[a][d].z_bar_var[i] /= (double)(doc->total[t] * doc->total[t]);
+        ss->z_bar[d].z_bar_var[i] /= (double)(doc->total[t] * doc->total[t]);
     }
 
     //ss->num_docs = ss->num_docs + 1; //because we need it for store statistics for each docs
@@ -734,7 +729,7 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
 
 
 
-double slda::slda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t, alphas as)
+double slda::slda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t)
 {
     double likelihood = 0, digsum = 0, var_gamma_sum = 0, t0 = 0.0, t1 = 0.0, t2 = 0.0;
     double * dig = new double [num_topics];
@@ -742,7 +737,7 @@ double slda::slda_compute_likelihood(document* doc, double** phi, double* var_ga
     int flag;
 
     int a = getAuthor(doc)
-    double sc = scaling[a]
+    
 
     // computes digamma terms for the gamma variation parameters
     for (k = 0; k < num_topics; k++)
@@ -753,14 +748,14 @@ double slda::slda_compute_likelihood(document* doc, double** phi, double* var_ga
     digsum = digamma(var_gamma_sum);
 
     //computes contribution of Dirichlet paraemter sums to log likelihood
-    likelihood = lgamma(sc*(as->alpha_sum_t)) - lgamma(var_gamma_sum);
+    likelihood = lgamma((as[t]->alpha_sum_t[a])) - lgamma(var_gamma_sum);
     
     //t0 stors likelihood contributions
     t0 = 0.0;
     for (k = 0; k < num_topics; k++)
     {
-        likelihood += -lgamma(sc*as->alpha_tot[k])
-            + (as->alpha_t[k] - 1)*(dig[k] - digsum) +
+        likelihood += -lgamma(as[t]->alpha_tot[a][k])
+            + (as[t]->alpha_t[a][k] - 1)*(dig[k] - digsum) +
             lgamma(var_gamma[k]) - (var_gamma[k] - 1)*(dig[k] - digsum);
 
         for (n = 0; n < doc->length; n++)
@@ -796,46 +791,51 @@ double slda::slda_compute_likelihood(document* doc, double** phi, double* var_ga
     return likelihood;
 }
 
-double slda::slda_inference(document* doc, double* var_gamma, double** phi, 
-     int t, alphas as,  const settings * setting)
+double slda::slda_inference(document* doc, double** var_gamma, double*** phi, 
+      alphas * as,  const settings * setting)
 {
-    int k, n, var_iter, l;
+    int k, n, var_iter, l,t ;
     int FP_MAX_ITER = 10;
     int fp_iter = 0;
 
     double converged = 1, phisum = 0, likelihood = 0, likelihood_old = 0;
 
 
-    double * oldphi = new double [num_topics];
-    double * digamma_gam = new double [num_topics];
-    double * sf_params = new double [num_topics];
-    double * sf_aux = new double [num_classes-1];
-    double sf_val = 0.0;
+    // fix this
+    double **digamma_gam = new double * [num_word_types];
+    double *sf_aux = new double [num_classes-1];
 
+    for (t = 0; t < num_word_types; t++)
+        *digamma_gam[t] = new double [num_topics[t]]
+
+    double sf_val = 0.0;
     int a = getAuthor(doc)
 
     // compute posterior dirichlet
-    for (k = 0; k < num_topics; k++)
-    {
-        var_gamma[k] = sc*as->alpha_t[k] + (doc->total[t]/((double) num_topics));
-        digamma_gam[k] = digamma(var_gamma[k]);
-        for (n = 0; n < doc->length; n++)
-            phi[n][k] = 1.0/(double)(num_topics);
-    }
+    for (t = 0; t < num_word_types; t++)
+        for (k = 0; k < num_topics; k++)
+        {
+            var_gamma[t][k] = as[t]->alpha_t[a][k] + (doc->total[t]/((double) num_topics[t]));
+            digamma_gam[t][k] = digamma(var_gamma[t][a][k]);
+            for (n = 0; n < doc->length[t]; n++)
+                phi[n][k] = 1.0/(double)(num_topics[t]);
+        }
 
     double t0 = 0.0;
     for (l = 0; l < num_classes-1; l ++)
     {
         sf_aux[l] = 1.0; // the quantity for equation 6 of each class
-        for (n = 0; n < doc->length[t]; n ++)
-        {
-            t0 = 0.0;
-            for (k = 0; k < num_topics[t]; k ++)
+
+        for (t = 0; t < num_word_types; t++)
+            for (n = 0; n < doc->length[t]; n ++)
             {
-                t0 += phi[n][k] * exp(eta[l][k] * doc->counts[t][n]/(double)(doc->total));
+                t0 = 0.0;
+                for (k = 0; k < num_topics[t]; k ++)
+                {
+                    t0 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
+                }
+                sf_aux[l] *= t0;
             }
-            sf_aux[l] *= t0;
-        }
     }
 
     var_iter = 0;
@@ -843,10 +843,17 @@ double slda::slda_inference(document* doc, double* var_gamma, double** phi,
     while ((converged > setting->VAR_CONVERGED) && ((var_iter < setting->VAR_MAX_ITER) || (setting->VAR_MAX_ITER == -1)))
     {
         var_iter++;
+
+        for (t = 0; t < num_word_types; t++)
+        {
+            double * sf_params = new double [num_topics[t]];
+            double * oldphi = new double [num_topics[t]];
+
         for (n = 0; n < doc->length[t]; n++)
         {
             //compute sf_params
             memset(sf_params, 0, sizeof(double)*num_topics[t]); 
+
 
             //in log space
             for (l = 0; l < num_classes-1; l ++)
@@ -866,36 +873,36 @@ double slda::slda_inference(document* doc, double* var_gamma, double** phi,
             }
 
             //
-            for (k = 0; k < num_topics; k++)
+            for (k = 0; k < num_topics[t]; k++)
             {
-                oldphi[k] = phi[n][k];
+                oldphi[k] = phi[t][n][k];
             }
             for (fp_iter = 0; fp_iter < FP_MAX_ITER; fp_iter ++) //fixed point update
             {
                 sf_val = 1.0; // the base class, in log space
-                for (k = 0; k < num_topics; k++)
+                for (k = 0; k < num_topics[t]; k++)
                 {
-                    sf_val += sf_params[k]*phi[n][k];
+                    sf_val += sf_params[k]*phi[t][n][k];
                 }
 
                 phisum = 0;
                 for (k = 0; k < num_topics; k++)
                 {
-                    phi[n][k] = digamma_gam[k] + log_prob_w[t][k][doc->words[t][n]];
+                    phi[t][n][k] = digamma_gam[t][k] + log_prob_w[t][k][doc->words[t][n]];
 
                     //added softmax parts
                     if (doc->label < num_classes-1)
-                        phi[n][k] += eta[t][doc->label][k]/(double)(doc->total);
-                    phi[n][k] -= sf_params[k]/(sf_val*(double)(doc->counts[n]));
+                        phi[t][n][k] += eta[t][doc->label][k]/(double)(doc->total[t]);
+                    phi[t][n][k] -= sf_params[k]/(sf_val*(double)(doc->counts[n]));
 
                     if (k > 0)
-                        phisum = log_sum(phisum, phi[n][k]);
+                        phisum = log_sum(phisum, phi[t][n][k]);
                     else
-                        phisum = phi[n][k]; // note, phi is in log space
+                        phisum = phi[t][n][k]; // note, phi is in log space
                 }
-                for (k = 0; k < num_topics; k++)
+                for (k = 0; k < num_topics[t]; k++)
                 {
-                    phi[n][k] = exp(phi[n][k] - phisum); //normalize
+                    phi[t][n][k] = exp(phi[t][n][k] - phisum); //normalize
                 }
             }
             //back to sf_aux value
@@ -904,17 +911,17 @@ double slda::slda_inference(document* doc, double* var_gamma, double** phi,
                 t = 0.0;
                 for (k = 0; k < num_topics; k ++)
                 {
-                    t += phi[n][k] * exp(eta[l][k] * doc->counts[n]/(double)(doc->total));
+                    t += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
                 }
                 sf_aux[l] *= t;
             }
             for (k = 0; k < num_topics; k++)
             {
-                var_gamma[k] = var_gamma[k] + doc->counts[n]*(phi[n][k] - oldphi[k]);
-                digamma_gam[k] = digamma(var_gamma[k]);
+                var_gamma[t][k] = var_gamma[t][k] + doc->counts[n]*(phi[n][k] - oldphi[k]);
+                digamma_gam[t][k] = digamma(var_gamma[t][k]);
             }
         }
-
+        }
         likelihood = slda_compute_likelihood(doc, phi, var_gamma);
         assert(!isnan(likelihood));
         converged = fabs((likelihood_old - likelihood) / likelihood_old);
