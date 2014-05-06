@@ -5,7 +5,6 @@
 import sys
 import re
 import pickle
-import itertools
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from features.meter import meter_ngrams
@@ -17,7 +16,6 @@ def stringify_ngrams(blocks):
     blocks: [list of [lists of [ngrams]]]
     Converts ngrams of the form [[1,2,3], [4,5,6]] to ['123', '456']
     for use with a CountVectorizer
-
     """
     return [[''.join(map(str, ngram)) for ngram in block] for block in blocks]
 
@@ -34,17 +32,17 @@ def texts_to_BOW(t1, t2, npara=100, syl_ngram_len=4):
     blocks1 = [t.replace('\n', ' ') for t in re.split(PAR_SPLIT, t1)][:npara]
     blocks2 = [t.replace('\n', ' ') for t in re.split(PAR_SPLIT, t2)][:npara]
 
-    
     print("Processing meter ngrams...")
     # Meter patterns per block
     meter1 = stringify_ngrams([meter_ngrams(text) for text in blocks1])
     meter2 = stringify_ngrams([meter_ngrams(text) for text in blocks2])
-    
 
     print("Processing syllable ngrams...")
     # Syllable patterns per block
-    syl1 = stringify_ngrams([syllable_ngrams(text, syl_ngram_len) for text in blocks1])
-    syl2 = stringify_ngrams([syllable_ngrams(text, syl_ngram_len) for text in blocks2])
+    syl1 = stringify_ngrams([syllable_ngrams(text, syl_ngram_len)
+                            for text in blocks1])
+    syl2 = stringify_ngrams([syllable_ngrams(text, syl_ngram_len)
+                            for text in blocks2])
 
     # Combine features into single list of ngrams
     # ngrams should not overlap
@@ -62,7 +60,7 @@ def texts_to_BOW(t1, t2, npara=100, syl_ngram_len=4):
     Y = np.array(labels)
 
     return X, Y
-    
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:

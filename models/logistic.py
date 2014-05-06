@@ -4,17 +4,16 @@
 # features and labels (X, Y)
 import pickle
 import sys
-import numpy as np
 from sklearn.cross_validation import LeaveOneOut
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: {} input.pickle".format(sys.argv[0]))
         exit()
-        
+
     with open(sys.argv[1], 'rb') as f:
         X, Y = pickle.load(f)
 

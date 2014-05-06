@@ -66,6 +66,12 @@ def tag_text(text):
     return sum(tag_sentences(text), [])
 
 
+def pos_ngrams(text, n):
+    """Extracts POS ngrams for a body of text."""
+    pos_tags = [tag for (w, tag) in tag_text(text)]
+    return ngrams(pos_tags, n)
+
+
 def syllabic_representation(text):
     """
     Maps text to a list of syllables and puncutation marks, e.g.:
