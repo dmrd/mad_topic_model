@@ -52,8 +52,10 @@ def pos_ngrams(text, n):
     return ngrams(pos_tags, n)
 
 
-def word_ngrams(text, n):
-    tokenized_text = [t for (t, _) in tag_text(text)]
+def word_ngrams(text, n, PUNC=True):
+    def filter(tag):
+        return PUNC or not tag in PUNCTUATION_TAGS
+    tokenized_text = [t for (t, tag) in tag_text(text) if filter(tag)]
     return ngrams(tokenized_text, n)
 
 
@@ -178,6 +180,14 @@ def word_counts(text):
     if counter:
         result.append((counter, None))
     return result
+
+
+def word_count_ngrams(text, n):
+    """
+    Returns the n-grams of word counts between punctuation.
+    """
+    counts = [s for (s, _) in word_counts(text)]
+    return ngrams(counts, n)
 
 
 def stress_counts_by_syllable(text, SECONDARY=True):
