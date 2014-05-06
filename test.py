@@ -1,5 +1,21 @@
 import unittest
 import features.analyzer as analyzer
+import features.extract as extracter
+
+
+class ExtracterTests(unittest.TestCase):
+
+    def setUp(self):
+        self.text = "This is preeminently the time to speak the truth, the whole truth, frankly and boldly. Nor need we shrink from honestly facing conditions in our country today. This great Nation will endure, as it has endured, will revive and will prosper."
+
+    def test_find_pos_ngram(self):
+        matches = extracter.find_pos_ngram(self.text, ('JJ', 'NN'))
+        self.assertEqual(matches, [('whole', 'truth'), ('great', 'Nation')])
+
+    def test_find_syllable_ngram(self):
+        matches = extracter.find_syllable_ngram(self.text, (2, 1, 2))
+        self.assertEqual(matches, [('frankly', 'and', 'boldly'),
+                         ('Nation', 'will', 'endure'), ('endured', 'will', 'revive')])
 
 
 class AnalyzerTests(unittest.TestCase):

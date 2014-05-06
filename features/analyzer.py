@@ -26,29 +26,9 @@ def cmu_lookup(s, APPROX=True):
         raise
 
 
-def syllable_ngrams(text, n):
-    """
-    Returns the n-grams of syllable usage by breaking each word down into
-    (# syllables) and then taking n-grams on that sequence. In this way,
-    it essentially ignores punctuation. E.g.:
-    >>> syllable_ngrams("It is: overwhelming.", 2)
-    >>> [(1, 1), (1, 4)]
-    """
-    syllables = [s for (s, _) in syllable_counts(text)]
-    syllables = sum(syllables, [])
-    return ngrams(syllables, n)
-
-
-def syllable_count_ngrams(text, n):
-    """
-    Returns the n-grams of syllable counts between punctuation. That is,
-    it sums (# syllables) for all the words between punctuation marks and
-    returns the n-grams on that sequence. E.g.:
-    >>> syllable_count_ngrams("It is: overwhelming. We should go.", 2)
-    >>> [(2, 4), (4, 3)]
-    """
-    syllables = [s for (s, _) in syllable_counts(text, TOTAL=True)]
-    return ngrams(syllables, n)
+#
+#  Part-of-Speech
+#
 
 
 def tag_sentences(text):
@@ -72,6 +52,18 @@ def pos_ngrams(text, n):
     return ngrams(pos_tags, n)
 
 
+def word_ngrams(text, n, PUNC=True):
+    def filter(tag):
+        return PUNC or not tag in PUNCTUATION_TAGS
+    tokenized_text = [t for (t, tag) in tag_text(text) if filter(tag)]
+    return ngrams(tokenized_text, n)
+
+
+#
+#  Syllables
+#
+
+
 def syllabic_representation(text):
     """
     Maps text to a list of syllables and puncutation marks, e.g.:
@@ -83,6 +75,30 @@ def syllabic_representation(text):
             return word
         return num_syllables(word)
     return map(to_syllables, tag_text(text))
+
+
+def num_syllables(word):
+    """
+    Returns the number of syllables in a word.
+    """
+    return len(list(y for y in cmu_lookup(word) if y[-1].isdigit()))
+
+
+def stress(word, SECONDARY=True):
+    """
+    Maps a word to its phones and their stresses. (1) indicates primary,
+    (2) secondary, and (0) no stress. If SECONDARY is False, no distinction
+    is made between types (1) and (2) stress. E.g.:
+    >>> stress("fire")
+    >>> [1, 0]
+    """
+    def extract_stress(s):
+        n = int(s[-1])
+        if not SECONDARY and n > 0:
+            return 1
+        return n
+    syllables = filter(lambda x: x[-1].isdigit(), cmu_lookup(word))
+    return map(extract_stress, syllables)
 
 
 def syllable_counts(text, TOTAL=False):
@@ -119,6 +135,31 @@ def syllable_counts(text, TOTAL=False):
     return result
 
 
+def syllable_ngrams(text, n):
+    """
+    Returns the n-grams of syllable usage by breaking each word down into
+    (# syllables) and then taking n-grams on that sequence. In this way,
+    it essentially ignores punctuation. E.g.:
+    >>> syllable_ngrams("It is: overwhelming.", 2)
+    >>> [(1, 1), (1, 4)]
+    """
+    syllables = [s for (s, _) in syllable_counts(text)]
+    syllables = sum(syllables, [])
+    return ngrams(syllables, n)
+
+
+def syllable_count_ngrams(text, n):
+    """
+    Returns the n-grams of syllable counts between punctuation. That is,
+    it sums (# syllables) for all the words between punctuation marks and
+    returns the n-grams on that sequence. E.g.:
+    >>> syllable_count_ngrams("It is: overwhelming. We should go.", 2)
+    >>> [(2, 4), (4, 3)]
+    """
+    syllables = [s for (s, _) in syllable_counts(text, TOTAL=True)]
+    return ngrams(syllables, n)
+
+
 def word_counts(text):
     """
     Returns a list of (word_counts, punctuation) pairs, where word_counts
@@ -139,6 +180,14 @@ def word_counts(text):
     if counter:
         result.append((counter, None))
     return result
+
+
+def word_count_ngrams(text, n):
+    """
+    Returns the n-grams of word counts between punctuation.
+    """
+    counts = [s for (s, _) in word_counts(text)]
+    return ngrams(counts, n)
 
 
 def stress_counts_by_syllable(text, SECONDARY=True):
@@ -162,27 +211,3 @@ def stress_counts_by_syllable(text, SECONDARY=True):
     if temp:
         result.append((temp, None))
     return result
-
-
-def num_syllables(word):
-    """
-    Returns the number of syllables in a word.
-    """
-    return len(list(y for y in cmu_lookup(word) if y[-1].isdigit()))
-
-
-def stress(word, SECONDARY=True):
-    """
-    Maps a word to its phones and their stresses. (1) indicates primary,
-    (2) secondary, and (0) no stress. If SECONDARY is False, no distinction
-    is made between types (1) and (2) stress. E.g.:
-    >>> stress("fire")
-    >>> [1, 0]
-    """
-    def extract_stress(s):
-        n = int(s[-1])
-        if not SECONDARY and n > 0:
-            return 1
-        return n
-    syllables = filter(lambda x: x[-1].isdigit(), cmu_lookup(word))
-    return map(extract_stress, syllables)
