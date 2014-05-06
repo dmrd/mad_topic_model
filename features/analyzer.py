@@ -22,6 +22,7 @@ def cmu_lookup(s, APPROX=True):
     except KeyError:
         if APPROX:
             (score, match) = max((ratio(s, t), t) for t in d)
+            d[s] = d[match]
             return d[match][0]
         raise
 
