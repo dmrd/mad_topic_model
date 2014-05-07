@@ -54,13 +54,18 @@ public:
     ~corpus();
     void read_data(const char * data_filename0, const char * label_filename);
     int * max_corpus_length();
+    void findDocsPer();
 public:
     int num_docs; // number documents
+    int * docsPer;
     int * size_vocab; // size of vocab for each type
     int num_classes; // number of authors
     int * num_total_words;
     int num_word_types;
     vector<document*> docs;
+    std::vector<std::vector<int> > docAuthors;
+
+
 };
 
 #endif // CORPUS_H

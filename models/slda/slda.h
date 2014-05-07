@@ -106,6 +106,7 @@ public:
    
     int num_docs; /* number of documents*/
     int * docs_per; // # documents per author, indexed by author 
+    std::vector<std::vector<int> > docAuthors;
 
     double epsilon;
     int * num_topics; // # of topics, indexed by word type

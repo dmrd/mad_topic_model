@@ -85,6 +85,9 @@ void slda::init(double epsilon2, int * num_topics_,
 {
     num_topics = num_topics_;
 
+    docs_per = c->docsPer;
+    docAuthors = c->docAuthors;
+
     num_word_types = c->num_word_types;
     num_docs = c->num_docs;
     num_classes = c->num_classes;
@@ -232,7 +235,7 @@ void slda::zero_initialize_ss(suffstats * ss, int t)
 **/
 int slda::getDoc(int a, int d)
 {
-    return 0; //corpus.getDoc(a,d)
+    return docAuthors[a][d]; //corpus.getDoc(a,d)
 }
 
 /*
