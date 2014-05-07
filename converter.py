@@ -10,6 +10,8 @@
     mind, it should be run with Python's -u (unbuffed output) option.
     Example usage:
     python -um converter data/quora.csv model.txt author.txt ngram_dict.txt author_dict.txt syllable 2
+
+    Please pardon the verbosity and use of global variables. Just trying to get shit done.
 """
 
 from features import analyzer
