@@ -1,11 +1,15 @@
+from string import punctuation
 from nltk.corpus import cmudict
 from nltk.util import ngrams
 from nltk import pos_tag, word_tokenize, sent_tokenize
+from collections import Counter
 from Levenshtein import ratio
+from etymology_dict import EtymologyDict
 
 
 PUNCTUATION_TAGS = ['.', ':', ',']
 d = cmudict.dict()
+e = EtymologyDict()
 
 
 def cmu_lookup(s, APPROX=True):
@@ -212,3 +216,24 @@ def stress_counts_by_syllable(text, SECONDARY=True):
     if temp:
         result.append((temp, None))
     return result
+
+#
+#  Etymology
+#
+
+
+def etymology_representation(text):
+    exclude = set(punctuation)
+    text = ''.join(ch for ch in text if ch not in exclude)
+    text = word_tokenize(text)
+    return map(e.lookup, text)
+
+
+def etymology_ngrams(text, n):
+    representation = etymology_representation(text)
+    return ngrams(representation, n)
+
+
+def etymology_frequencies(text, n):
+    representation = etymology_representation(text)
+    return Counter(representation)

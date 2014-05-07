@@ -3,6 +3,7 @@ from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor
 from scrapy.selector import Selector
 from etym_scraper.items import Entry
 
+
 class EtymSpider(CrawlSpider):
     name = "etym_scraper"
     allowed_domains = ["etymonline.com"]
@@ -24,8 +25,9 @@ class EtymSpider(CrawlSpider):
         for dt in all_dt:
             entry = Entry()
             entry['word'] = dt.xpath('.//a[1]/text()').extract()
-            entry['etym'] = dt.xpath('./following-sibling::dd/text()').extract()
+            entry['etym'] = dt.xpath(
+                './following-sibling::dd/text()').extract()
 
             results.append(entry)
-            
+
         return results
