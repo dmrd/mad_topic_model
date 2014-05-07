@@ -1,3 +1,17 @@
+"""
+    Converts a CSV file to input for the SLDA model.
+    Writes to four different files:
+        1. output_model_file: contains frequency counts for the ngrams
+        2. output_author_file: contains author labels for the documents
+        3. output_ngram_indices: maps ngrams to integer indices
+        4. output_author_indices: maps authors to integer indices
+    The convert writes to these documents in an online manner to avoid
+    doing tons of data processing before producing results. With that in
+    mind, it should be run with Python's -u (unbuffed output) option.
+    Example usage:
+    python -um converter data/quora.csv model.txt author.txt ngram_dict.txt author_dict.txt syllable 2
+"""
+
 from features import analyzer
 from collections import Counter
 import argparse
@@ -7,10 +21,12 @@ ngram_index = 0
 ngram_indices = {}
 
 
-def get_ngram_index(word):
+def get_ngram_index(word, filename):
     global ngram_index
     global ngram_indices
     if not word in ngram_indices:
+        with open(filename, 'a+') as f:
+            f.write(str(word) + "\n")
         ngram_indices[word] = ngram_index
         ngram_index += 1
     return ngram_indices[word]
@@ -20,31 +36,36 @@ author_index = 0
 author_indices = {}
 
 
-def get_author_index(author):
+def get_author_index(author, filename):
     global author_index
     global author_indices
     if not author in author_indices:
+        with open(filename, 'a+') as f:
+            f.write(author + "\n")
         author_indices[author] = author_index
         author_index += 1
     return author_indices[author]
 
 
-def convert_to_slda(data):
+def convert_to_slda(data, extractor, model_file, author_file, model_dict, author_dict):
     def to_slda(ngrams):
         counter = Counter(ngrams)
         s = str(len(counter))
         for (e, c) in counter.items():
-            index = get_ngram_index(e)
+            index = get_ngram_index(e, model_dict)
             s += " " + str(index) + ":" + str(c)
         return s
 
-    model_string = ""
-    author_string = ""
-    for (author, ngrams) in data:
-        index = get_author_index(author)
-        author_string += str(index) + "\n"
-        model_string += to_slda(ngrams) + "\n"
-    return model_string, author_string
+    with open(model_file, 'w+') as fm:
+        with open(author_file, 'w+') as fa:
+
+            for (author, doc) in data:
+                index = get_author_index(author, author_dict)
+
+                ngrams = extractor(doc)
+
+                fa.write(str(index) + "\n")
+                fm.write(to_slda(ngrams) + "\n")
 
 
 ngram_parsers = {
@@ -78,19 +99,12 @@ if __name__ == "__main__":
         raise ValueError(str(args.ngram_type) + " is not a valid ngram type.")
     extractor = lambda doc: ngram_parsers[args.ngram_type](doc, args.n)
 
+    # wipe files, if existing
+    open(args.output_ngram_indices, 'w+')
+    open(args.output_author_indices, 'w+')
+
     with open(args.input_file, 'rb') as csvfile:
         reader = csv.reader(csvfile, quotechar='"')
-        corpus = [(row[0].strip(), row[1].strip()) for row in reader][:100]
-        corpus = [(row[0], extractor(row[1])) for row in corpus]
-        (model_string, author_string) = convert_to_slda(corpus)
-
-        file(args.output_model_file, 'w').write(model_string)
-        file(args.output_author_file, 'w').write(author_string)
-
-        with open(args.output_ngram_indices, 'w+') as f:
-            for ngram in sorted(ngram_indices.iterkeys(), key=lambda k: ngram_indices[k]):
-                f.write(str(ngram) + "\n")
-
-        with open(args.output_author_indices, 'w+') as f:
-            for author in sorted(author_indices.iterkeys(), key=lambda k: author_indices[k]):
-                f.write(author + "\n")
+        corpus = [(row[0].strip(), row[1].strip()) for row in reader]
+        convert_to_slda(corpus, extractor, args.output_model_file,
+                        args.output_author_file, args.output_ngram_indices, args.output_author_indices)
