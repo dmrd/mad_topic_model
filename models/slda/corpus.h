@@ -28,30 +28,51 @@ using namespace std;
 class document
 {
     public:
-        int ** words;
+        int ** words; 
         int ** counts;
         int *length;
         int *total;
-        int label;
-        int wordTypes; 
+        int label; // label is the author
+        int wordTypes;  // word types is the type of n gram
 
         document();
-        document(int * len);   
+        document(int wt);
+        void set_length(int t, int len);
+
         document(int * len, int wt);
         ~document();
     private:
         void init(int * len, int wt);
 };
 
-document::document(int * len)
-{
-    init(len,1);
-}
-
+// constructs a document with wt wordtypes
+// and length array len
 document::document(int* len, int  wt)
 {
     init(len,wt);
 }
+
+// construcs a document with wt wordtypes
+document::document(int wt)
+{
+    wordTypes = wt;
+    words = new int *  [wordTypes];
+    counts = new int * [wordTypes];
+    total = new int[wordTypes];
+    label = -1;
+
+}
+
+// sense length of document in t^th word time
+void document::set_length(int t, int len)
+{
+    words[t] = new int [length[t]];
+    counts[t] = new int [length[t]];
+    length[t] = len;
+    total[t] = 0;
+}
+
+// helper method for construction
 void document::init(int * len, int wt)
 {
         length = len;
@@ -103,13 +124,14 @@ class corpus
 {
 public:
     corpus();
+    corpus(int T);
     ~corpus();
-    void read_data(const char * data_filename, const char * label_filename);
+    void read_data(const char * data_filename0, const char * label_filename);
     int * max_corpus_length();
 public:
-    int num_docs;
-    int * size_vocab;
-    int num_classes;
+    int num_docs; // number documents
+    int * size_vocab; // size of vocab for each type
+    int num_classes; // number of authors
     int * num_total_words;
     int num_word_types;
     vector<document*> docs;

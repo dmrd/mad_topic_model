@@ -22,6 +22,11 @@
 #include "corpus.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
+#include <string>
+#include <sstream>
+#include <iostream>
+
 
 corpus::corpus()
 {
@@ -29,7 +34,20 @@ corpus::corpus()
     size_vocab = NULL;
     num_classes = 0;
     num_total_words = NULL;
+    num_word_types = 1;
 }
+
+corpus::corpus(int T)
+{
+    num_word_types = T;
+    num_docs = 0;
+    size_vocab = new int [num_word_types];
+    num_classes = 0;
+    num_total_words = new int [num_word_types];
+    for (int t = 0; t < T; t ++)
+        num_total_words[t] = 0;
+}
+
 
 corpus::~corpus()
 {
@@ -46,46 +64,73 @@ corpus::~corpus()
     delete [] num_total_words;
 }
 
-void corpus::read_data(const char * data_filename,
+void corpus::read_data(const char * data_filename0,
                        const char * label_filename)
-{return;}
-/*
 {
     int OFFSET = 0;
     int length = 0, count = 0, word = 0,
-        n = 0, nd = 0, nw = 0, label = -1;
+        n = 0, nd = 0, label = -1, t =0;
+
+    nd = 0;
+    int * nw = new int [num_word_types];
+    const char ** data_filename = new const char * [num_word_types];
+
+    for (t = 0; t < num_word_types; t++)
+    {
+        char * app;
+        sprintf(app, "_%i", t);
+        std::string s1 = std::string(data_filename0);
+        std::string s2 = std::string(app);
+
+        data_filename[t] = (s1+s2).c_str();
+    }
 
     FILE * fileptr;
-    fileptr = fopen(data_filename, "r");
-    printf("\nreading data from %s\n", data_filename);
-    nd = 0;
-    nw = 0;
 
-    while ((fscanf(fileptr, "%10d", &length) != EOF))
+    for (t = 0; t < num_word_types; t ++)
     {
-        document * doc = new document(length);
-        for (n = 0; n < length; n++)
+        nw[t] = 0;
+        fileptr = fopen(data_filename[t], "r");
+        printf("\nreading data from %s\n", data_filename[t]);
+
+        while ((fscanf(fileptr, "%10d", &length) != EOF))
         {
-            fscanf(fileptr, "%10d:%10d", &word, &count);
-            word = word - OFFSET;
-            doc->words[n] = word;
-            doc->counts[n] = count;
-            doc->total += count;
-            if (word >= nw)
+            document * doc;
+            if (t == 0)
+                 doc = new document(t);
+            else 
+                 doc = docs[nd];
+            
+            doc->set_length(t,length);
+
+            for (n = 0; n < length; n++)
             {
-                nw = word + 1;
+                fscanf(fileptr, "%10d:%10d", &word, &count);
+                word = word - OFFSET;
+                doc->words[t][n] = word;
+                doc->counts[t][n] = count;
+                doc->total[t] += count;
+                if (word >= nw[t])
+                {
+                    nw[t] = word + 1;
+                }
             }
+            num_total_words[t] += doc->total[t];
+            docs.push_back(doc);
+            nd++;
         }
-        num_total_words += doc->total;
-        docs.push_back(doc);
-        nd++;
+        fclose(fileptr);
     }
-    fclose(fileptr);
     num_docs = nd;
     size_vocab = nw;
     printf("number of docs  : %d\n", nd);
-    printf("number of terms : %d\n", nw);
-    printf("number of total words : %d\n", num_total_words);
+
+    for (t = 0; t<num_word_types; t++)
+    {
+        printf("word type %i\n", t);
+        printf("number of terms : %d\n", nw[t]);
+        printf("number of total words : %d\n", num_total_words[t]);
+    }
 
     fileptr = fopen(label_filename, "r");
     printf("\nreading labels from %s\n", label_filename);
@@ -102,7 +147,7 @@ void corpus::read_data(const char * data_filename,
     }
     assert(nd == int(docs.size()));
     printf("number of classes : %d\n\n", num_classes);
-}*/
+}
 
 int * corpus::max_corpus_length() {
     int * max_length = new int [num_word_types];

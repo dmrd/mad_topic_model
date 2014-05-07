@@ -39,47 +39,58 @@ int main(int argc, char* argv[])
     }
     if (strcmp(argv[1], "est") == 0)
     {
-        corpus c;
-        char * data_filename = argv[2];
-        char * label_filename = argv[3];
-        c.read_data(data_filename, label_filename);
+        int num_word_types = (int)(atof(argv[2]));
+        corpus * c = new corpus(num_word_types);
+
+        char * data_filename = argv[3];
+        char * label_filename = argv[4];
+
+        c->read_data(data_filename, label_filename);
         settings setting;
-        char * setting_filename = argv[4];
+        char * setting_filename = argv[5];
         setting.read_settings(setting_filename);
 
-        double alpha = atof(argv[5]);
-        int * num_topics = new int[c.num_word_types];
-        //initialize this
-        //int num_topics = atoi(argv[6]);
-        printf("number of topics is %d\n", num_topics);
+        double alpha = atof(argv[6]);
+        int * num_topics = new int[num_word_types];
+        
         char * init_method = argv[7];
         char * directory = argv[8];
         printf("models will be saved in %s\n", directory);
         make_directory(directory);
 
+        //initialize this
+        for (int t = 0; t < num_word_types;t++)
+        {
+            printf("number of topics is %i for t = %i\n", num_topics[t],t);
+            num_topics[t] = atoi(argv[9+t]);
+        }
+
         slda model;
-        model.init(alpha, num_topics *, &c);
-        model.v_em(&c, &setting, init_method, directory);
+        model.init(alpha, num_topics , c);
+        model.v_em(c, &setting, init_method, directory);
     }
 
     if (strcmp(argv[1], "inf") == 0)
     {
-        corpus c;
-        char * data_filename = argv[2];
-        char * label_filename = argv[3];
-        c.read_data(data_filename, label_filename);
+        
+        int num_word_types = (int)(atof(argv[2]));
+        corpus * c = new corpus(num_word_types);
+
+        char * data_filename = argv[3];
+        char * label_filename = argv[4];
+        c->read_data(data_filename, label_filename);
         settings setting;
-        char * setting_filename = argv[4];
+        char * setting_filename = argv[5];
         setting.read_settings(setting_filename);
 
-        char * model_filename = argv[5];
-        char * directory = argv[6];
+        char * model_filename = argv[6];
+        char * directory = argv[7];
         printf("\nresults will be saved in %s\n", directory);
         make_directory(directory);
 
         slda model;
         model.load_model(model_filename);
-        model.infer_only(&c, &setting, directory);
+        model.infer_only(c, &setting, directory);
     }
 
     return 0;

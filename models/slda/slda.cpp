@@ -407,7 +407,7 @@ void slda::v_em(corpus * c, const settings * setting,
                 likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t], ss[t], ETA_UPDATE, d,  t, setting);
         }
 
-        updatePrior();
+        updatePrior(var_gamma);
 
         printf("likelihood: %10.10f\n", likelihood);
         // m-step
@@ -1274,8 +1274,14 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
  * load the model in the binary format
  *ED
  */
-/*
+
+
 void slda::load_model(const char * filename)
+{
+   return; 
+}
+
+/**
 {
     FILE * file = NULL;
     file = fopen(filename, "rb");
