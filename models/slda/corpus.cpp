@@ -26,9 +26,9 @@
 corpus::corpus()
 {
     num_docs = 0;
-    size_vocab = 0;
+    size_vocab = NULL;
     num_classes = 0;
-    num_total_words = 0;
+    num_total_words = NULL;
 }
 
 corpus::~corpus()
@@ -41,13 +41,15 @@ corpus::~corpus()
     docs.clear();
 
     num_docs = 0;
-    size_vocab = 0;
+    delete [] size_vocab;
     num_classes = 0;
-    num_total_words = 0;
+    delete [] num_total_words;
 }
 
 void corpus::read_data(const char * data_filename,
                        const char * label_filename)
+{return;}
+/*
 {
     int OFFSET = 0;
     int length = 0, count = 0, word = 0,
@@ -100,14 +102,19 @@ void corpus::read_data(const char * data_filename,
     }
     assert(nd == int(docs.size()));
     printf("number of classes : %d\n\n", num_classes);
-}
+}*/
 
-int corpus::max_corpus_length() {
-    int max_length = 0;
+int * corpus::max_corpus_length() {
+    int * max_length = new int [num_word_types];
+    for (int t = 0; t < num_word_types; t++)
+        max_length[t] =0;
 
     for (int d = 0; d < num_docs; d++) {
-        if (docs[d]->length > max_length)
-            max_length = docs[d]->length;
+         for (int t = 0; t < num_word_types; t++)
+        {
+            if (docs[d]->length[t] > max_length[t])
+                max_length[t] = docs[d]->length[t];
+        }
     }
     return max_length;
 }

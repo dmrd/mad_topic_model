@@ -23,6 +23,8 @@
 #define SLDA_H
 #include "settings.h"
 #include "corpus.h"
+#include <gsl/gsl_matrix.h>
+
 
 typedef struct {
     double * z_bar_m;
@@ -30,10 +32,10 @@ typedef struct {
 } z_stat;
 
 typedef struct {
-    double ** word_ss; /* indexed by document, then word type, the word */
-    double * word_total_ss; /* indexed by word type, then topic*/
+    double ** word_ss; /* indexed by document, the word */
+    double * word_total_ss; /* indexed by word type, then topic */
 
-    z_stat ** z_bar /* one per word topic, one per document,*/;
+    z_stat * z_bar /* per document */;
     int * labels;
     int * tot_labels;
 } suffstats;
@@ -58,34 +60,45 @@ public:
     slda();
     ~slda();
     void free_model();
-    void init(double alpha_, int num_topics_, const corpus * c);
+    void init(double epsilon2, int * num_topics_, const corpus * c);
     void v_em(corpus * c, const settings * setting,
               const char * start, const char * directory);
+    void updatePrior(double *** var_gamma);
+    void globalPrior(double *** var_gamma);
+    void fitDirichlet(gsl_matrix * mat);
 
-    void save_model(const char * filename);
-    void save_model_text(const char * filename);
+
+    void save_model(const char * filename, int t);
+    void save_model_text(const char * filename, int t);
     void load_model(const char * model_filename);
     void infer_only(corpus * c, const settings * setting,
                     const char * directory);
 
-    suffstats * new_suffstats(int num_docs);
-    void free_suffstats(suffstats * ss);
-    void zero_initialize_ss(suffstats * ss);
-    void random_initialize_ss(suffstats * ss, corpus * c);
-    void corpus_initialize_ss(suffstats* ss, corpus * c);
-    void load_model_initialize_ss(suffstats* ss, corpus * c);
-    void mle(suffstats * ss, int eta_update, const settings * setting);
+    suffstats * new_suffstats( int t);
+    void free_suffstats(suffstats ** ss, int t);
+    void zero_initialize_ss(suffstats * ss, int t);
+    void random_initialize_ss(suffstats * ss, corpus * c, int t);
+    void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
+    void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
+    void mle(suffstats ** ss, int eta_update, const settings * setting);
 
-    double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss, int eta_update, const settings * setting);
+    double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
+     int eta_update, int _docNum, int t, const settings * setting);
 
-    double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting);
-    double lda_compute_likelihood(document* doc, double** phi, double* var_gamma);
-    double slda_inference(document* doc, double* var_gamma, double** phi, const settings * setting);
-    double slda_compute_likelihood(document* doc, double** phi, double* var_gamma);
+    double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t);
+    double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t);
+    double slda_inference(document* doc, double** var_gamma, double*** phi, 
+      alphas *** as, int d, const settings * setting);
+    double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
 
-    void save_gamma(char* filename, double** gamma, int num_docs);
-    void write_word_assignment(FILE* f, document* doc, double** phi);
+    void save_gamma(char* filename, double*** gamma, int num_docs, int t);
+    void write_word_assignment(FILE* f, document* doc, double*** phi, int t);
+    void init_alpha(double epsilon2);
 
+    void updatePrior();
+
+    int vec_index(int t, int l, int k);
+    int getDoc(int a, int d);
 
 public:
     
@@ -94,7 +107,7 @@ public:
     int num_docs; /* number of documents*/
     int * docs_per; // # documents per author, indexed by author 
 
-
+    double epsilon;
     int * num_topics; // # of topics, indexed by word type
     int num_classes; // number of authors
     int * size_vocab; // size of vocab for each type of word
@@ -105,6 +118,8 @@ public:
     // indexed by word type, then topic, then word
     double *** eta; //softmax regression, in general, there are num_classes-1 etas, we don't need a intercept here, since \sum_i \bar{z_i} = 1
     // indexed first by class type, then by word type, then by word
+    alphas *** as; 
+    alphas ** as_global;
 };
 
 #endif // SLDA_H

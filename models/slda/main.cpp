@@ -48,7 +48,9 @@ int main(int argc, char* argv[])
         setting.read_settings(setting_filename);
 
         double alpha = atof(argv[5]);
-        int num_topics = atoi(argv[6]);
+        int * num_topics = new int[c.num_word_types];
+        //initialize this
+        //int num_topics = atoi(argv[6]);
         printf("number of topics is %d\n", num_topics);
         char * init_method = argv[7];
         char * directory = argv[8];
@@ -56,7 +58,7 @@ int main(int argc, char* argv[])
         make_directory(directory);
 
         slda model;
-        model.init(alpha, num_topics, &c);
+        model.init(alpha, num_topics *, &c);
         model.v_em(&c, &setting, init_method, directory);
     }
 

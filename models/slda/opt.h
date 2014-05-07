@@ -30,7 +30,7 @@
 
 struct opt_parameter
 {
-	suffstats * ss;
+	suffstats ** ss;
 	slda * model;
 	double PENALTY;
 };

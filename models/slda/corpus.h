@@ -27,41 +27,77 @@ using namespace std;
 
 class document
 {
-public:
-    int * words;
-    int * counts;
-    int length;
-    int total;
-    int label;
-public:
-    document()
-    {
-        words = NULL;
-        counts = NULL;
-        length = 0;
-        total = 0;
-        label = -1;
-    }
-    document(int len)
-    {
+    public:
+        int ** words;
+        int ** counts;
+        int *length;
+        int *total;
+        int label;
+        int wordTypes; 
+
+        document();
+        document(int * len);   
+        document(int * len, int wt);
+        ~document();
+    private:
+        void init(int * len, int wt);
+};
+
+document::document(int * len)
+{
+    init(len,1);
+}
+
+document::document(int* len, int  wt)
+{
+    init(len,wt);
+}
+void document::init(int * len, int wt)
+{
         length = len;
-        words = new int [length];
-        counts = new int [length];
-        total = 0;
+        wordTypes  = wt;
+
+        words = new int *  [wordTypes];
+        counts = new int * [wordTypes];
+
+        for (int t = 0; t < wordTypes; t++)
+        {
+            words[t] = new int [length[t]];
+            counts[t] = new int [length[t]];
+        }
+
+        total = new int[wordTypes];
         label = -1;
-    }
-    ~document()
+}
+
+document::~document()
     {
         if (words != NULL)
         {
+            for (int t = 0; t < wordTypes; t++)
+            {
+                delete [] words[t];
+                delete [] counts[t];
+            }
             delete [] words;
             delete [] counts;
-            length = 0;
-            total = 0;
+
+            delete[] length;
+            delete [] total;
             label = -1;
         }
     }
-};
+
+document::document()
+{
+    words = NULL;
+    counts = NULL;
+    length = NULL;
+    total = NULL;
+    label = -1;
+}
+
+
 
 class corpus
 {
@@ -69,12 +105,13 @@ public:
     corpus();
     ~corpus();
     void read_data(const char * data_filename, const char * label_filename);
-    int max_corpus_length();
+    int * max_corpus_length();
 public:
     int num_docs;
-    int size_vocab;
+    int * size_vocab;
     int num_classes;
-    int num_total_words;
+    int * num_total_words;
+    int num_word_types;
     vector<document*> docs;
 };
 
