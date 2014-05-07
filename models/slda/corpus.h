@@ -28,7 +28,7 @@ using namespace std;
 class document
 {
     public:
-        int ** words; 
+        int ** words;
         int ** counts;
         int *length;
         int *total;
@@ -44,80 +44,6 @@ class document
     private:
         void init(int * len, int wt);
 };
-
-// constructs a document with wt wordtypes
-// and length array len
-document::document(int* len, int  wt)
-{
-    init(len,wt);
-}
-
-// construcs a document with wt wordtypes
-document::document(int wt)
-{
-    wordTypes = wt;
-    words = new int *  [wordTypes];
-    counts = new int * [wordTypes];
-    total = new int[wordTypes];
-    label = -1;
-
-}
-
-// sense length of document in t^th word time
-void document::set_length(int t, int len)
-{
-    words[t] = new int [length[t]];
-    counts[t] = new int [length[t]];
-    length[t] = len;
-    total[t] = 0;
-}
-
-// helper method for construction
-void document::init(int * len, int wt)
-{
-        length = len;
-        wordTypes  = wt;
-
-        words = new int *  [wordTypes];
-        counts = new int * [wordTypes];
-
-        for (int t = 0; t < wordTypes; t++)
-        {
-            words[t] = new int [length[t]];
-            counts[t] = new int [length[t]];
-        }
-
-        total = new int[wordTypes];
-        label = -1;
-}
-
-document::~document()
-    {
-        if (words != NULL)
-        {
-            for (int t = 0; t < wordTypes; t++)
-            {
-                delete [] words[t];
-                delete [] counts[t];
-            }
-            delete [] words;
-            delete [] counts;
-
-            delete[] length;
-            delete [] total;
-            label = -1;
-        }
-    }
-
-document::document()
-{
-    words = NULL;
-    counts = NULL;
-    length = NULL;
-    total = NULL;
-    label = -1;
-}
-
 
 
 class corpus
