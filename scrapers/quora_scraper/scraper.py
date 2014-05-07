@@ -22,7 +22,12 @@ for username_counter, username in enumerate(usernames):
 
     posts = [] # list of tuples (username, answer)
 
-    browser.visit("http://www.quora.com/%s/answers" % username)
+    try:
+        browser.visit("http://www.quora.com/%s/answers" % username)
+    except:
+        print "Failed on %s" % username
+        continue
+
 
     # get rid of the login overlay
     try:
