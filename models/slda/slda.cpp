@@ -428,27 +428,29 @@ void slda::v_em(corpus * c, const settings * setting,
         fflush(likelihood_file);
         if ((i % LAG) == 0)
         {
+            sprintf(filename, "%s/%03d.model", directory, i);
+            save_model(filename);
+            sprintf(filename, "%s/%03d.gamma", directory, i);
+            save_gamma(filename, var_gamma, c->num_docs);
+
             for (t =0; t < num_word_types; t++)
-        {
-            sprintf(filename, "%s/%03d.model%i", directory, i,t);
-            save_model(filename,t);
-            sprintf(filename, "%s/%03d.model.text%i", directory, i,t);
-            save_model_text(filename,t);
-            sprintf(filename, "%s/%03d.gamma%i", directory, i,t);
-            save_gamma(filename, var_gamma, c->num_docs,t);
-        }
+            {
+                sprintf(filename, "%s/%03d.model.text%i", directory, i,t);
+                save_model_text(filename,t); 
+            }
         }
     }
 
     // output the final model
+    sprintf(filename, "%s/final.model", directory);
+    save_model(filename);
+    sprintf(filename, "%s/final.gamma", directory);
+    save_gamma(filename, var_gamma, c->num_docs);
+
     for (t =0; t < num_word_types; t++)
     {
-        sprintf(filename, "%s/final.model%i", directory, t);
-        save_model(filename, t);
         sprintf(filename, "%s/final.model%i.text", directory, t);
         save_model_text(filename, t);
-        sprintf(filename, "%s/final.gamma%i", directory, t);
-        save_gamma(filename, var_gamma, c->num_docs,  t);
     }
 
     fclose(likelihood_file);
@@ -459,9 +461,9 @@ void slda::v_em(corpus * c, const settings * setting,
     {
         //final inference
         if ((d % 100) == 0) printf("final e step document %d\n", d);
-        likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d ,setting);
-        for (t =0; t < num_word_types; t++)
-            write_word_assignment(w_asgn_file, c->docs[d], phi,t);
+            likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d ,setting);
+        
+        write_word_assignment(w_asgn_file, c->docs[d], phi);
 
     }
     fclose(w_asgn_file);
@@ -951,11 +953,9 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
     printf("average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
 
-    for (t = 0; t < num_word_types; t++)
-    {
-        sprintf(filename, "%s/inf-gamma%i.dat", directory,t);
-        save_gamma(filename, var_gamma, c->num_docs, t);
-    }
+
+    sprintf(filename, "%s/inf-gamma.dat", directory);
+    save_gamma(filename, var_gamma, c->num_docs);
 
     for (d = 0; d < c->num_docs; d++)
     {
@@ -979,65 +979,42 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 }
 
 
-void slda::save_gamma(char* filename, double*** gamma, int num_docs, int t)
+void slda::save_gamma(char* filename, double*** gamma, int num_docs)
 {
-    int d, k;
+    int d, k, t;
 
     FILE* fileptr = fopen(filename, "w");
-    for (d = 0; d < num_docs; d++)
-    {
-        fprintf(fileptr, "%5.10f", gamma[d][t][0]);
-        for (k = 1; k < num_topics[t]; k++)
-            fprintf(fileptr, " %5.10f", gamma[d][t][k]);
-        fprintf(fileptr, "\n");
-    }
+    for (t = 0; t < num_word_types; t++)
+        for (d = 0; d < num_docs; d++)
+        {
+            fprintf(fileptr, "%5.10f", gamma[d][t][0]);
+            for (k = 1; k < num_topics[t]; k++)
+                fprintf(fileptr, " %5.10f", gamma[d][t][k]);
+            fprintf(fileptr, "\n");
+        }
+    fprintf(fileptr, "\n");
     fclose(fileptr);
 }
     
 
-void slda::write_word_assignment(FILE* f, document* doc, double*** phi, int t)
+void slda::write_word_assignment(FILE* f, document* doc, double*** phi)
 
 {
-    int n;
+    int n, t;
 
-    fprintf(f, "%03d", doc->length[t]);
-    for (n = 0; n < doc->length[t]; n++)
+    for (t = 0; t < num_word_types; t++)
     {
-        fprintf(f, " %04d:%02d", doc->words[t][n], argmax(phi[t][n], num_topics[t]));
+        fprintf(f, "%03d", doc->length[t]);
+        for (n = 0; n < doc->length[t]; n++)
+        {
+            fprintf(f, " %04d:%02d", doc->words[t][n], argmax(phi[t][n], num_topics[t]));
+        }
+        fprintf(f, "\n");
     }
     fprintf(f, "\n");
     fflush(f);
 }
 
-/*
- * save the model in the binary format
- * EDIT THIS LATER
- */
-
-void slda::save_model(const char * filename, int t)
-{
-    FILE * file = NULL;
-    file = fopen(filename, "wb");
-    fwrite(&epsilon, sizeof (double), 1, file);
-    fwrite(&num_topics[t], sizeof (int), 1, file);
-    fwrite(&size_vocab[t], sizeof (int), 1, file);
-    fwrite(&num_classes, sizeof (int), 1, file);
-
-    for (int k = 0; k < num_topics[t]; k++)
-    {
-        fwrite(log_prob_w[t][k], sizeof(double), size_vocab[t], file);
-    }
-    if (num_classes > 1)
-    {
-        for (int i = 0; i < num_classes-1; i ++)
-        {
-            fwrite(eta[i], sizeof(double), num_topics[t], file);
-        }
-    }
-
-    fflush(file);
-    fclose(file);
-}
 
 /*
  * save the model in the text format
@@ -1281,35 +1258,124 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
 
 void slda::load_model(const char * filename)
 {
-   return; 
-}
-
-/**
-{
     FILE * file = NULL;
     file = fopen(filename, "rb");
-    fread(&alpha, sizeof (double), 1, file);
-    fread(&num_topics, sizeof (int), 1, file);
-    fread(&size_vocab, sizeof (int), 1, file);
-    fread(&num_classes, sizeof (int), 1, file);
+    //fwrite(&epsilon, sizeof (double), 1, file);
+    //fwrite(&num_topics[t], sizeof (int), 1, file);
+    //fwrite(&size_vocab[t], sizeof (int), 1, file);
 
-    log_prob_w = new double * [num_topics];
-    for (int k = 0; k < num_topics; k++)
+    fread(&num_classes, sizeof (int), 1, file);
+    fread(&num_word_types, sizeof (int), 1, file);
+
+    int * num_topics = new int[num_word_types];
+    int * size_vocab = new int[num_word_types];
+
+    double *** log_prob_w =  new double ** [num_word_types];
+    alphas *** as =  new alphas ** [num_word_types];
+    alphas ** as_global =  new alphas * [num_word_types];
+
+
+    for (int t = 0; t < num_word_types; t++)
     {
-        log_prob_w[k] = new double [size_vocab];
-        fread(log_prob_w[k], sizeof(double), size_vocab, file);
-    }
-    if (num_classes > 1)
-    {
-        eta = new double * [num_classes-1];
-        for (int i = 0; i < num_classes-1; i ++)
+        fread(&epsilon, sizeof (double), 1, file);
+        fread(&num_topics[t], sizeof (int), 1, file);
+        fread(&size_vocab[t], sizeof (int), 1, file);
+
+        for (int k = 0; k < num_topics[t]; k++)
         {
-            eta[i] = new double [num_topics];
-            fread(eta[i], sizeof(double), num_topics, file);
+            fread(log_prob_w[t][k], sizeof(double), size_vocab[t], file);
+        }
+
+        fread(as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
+        for (int a = 0; a < num_classes; a++)
+        {
+            fread(as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
+        }
+        if (num_classes > 1)
+        {
+            for (int i = 0; i < num_classes-1; i ++)
+            {
+                fread(eta[t][i], sizeof(double), num_topics[t], file);
+            }
         }
     }
 
     fflush(file);
     fclose(file);
 }
-*/
+
+void slda::save_model(const char * filename)
+{
+    FILE * file = NULL;
+    file = fopen(filename, "wb");
+    //fwrite(&epsilon, sizeof (double), 1, file);
+    //fwrite(&num_topics[t], sizeof (int), 1, file);
+    //fwrite(&size_vocab[t], sizeof (int), 1, file);
+
+    fwrite(&num_classes, sizeof (int), 1, file);
+    fwrite(&num_word_types,sizeof (int), 1, file);
+
+    for (int t = 0; t < num_word_types; t++)
+    {
+        fwrite(&epsilon, sizeof (double), 1, file);
+        fwrite(&num_topics[t], sizeof (int), 1, file);
+        fwrite(&size_vocab[t], sizeof (int), 1, file);
+
+        for (int k = 0; k < num_topics[t]; k++)
+        {
+            fwrite(log_prob_w[t][k], sizeof(double), size_vocab[t], file);
+        }
+
+        fwrite(as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
+        for (int a = 0; a < num_classes; a++)
+        {
+            fwrite(as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
+        }
+        if (num_classes > 1)
+        {
+            for (int i = 0; i < num_classes-1; i ++)
+            {
+                fwrite(eta[t][i], sizeof(double), num_topics[t], file);
+            }
+        }
+    }
+
+    fflush(file);
+    fclose(file);
+}
+/**
+void slda::load_model_alpha(const char * filename)
+{
+
+}
+**/
+
+
+/**
+void slda::save_model(const char * filename, int t)
+{
+    FILE * file = NULL;
+    file = fopen(filename, "wb");
+    //fwrite(&epsilon, sizeof (double), 1, file);
+    fwrite(&num_topics[t], sizeof (int), 1, file);
+    fwrite(&size_vocab[t], sizeof (int), 1, file);
+    fwrite(&num_classes, sizeof (int), 1, file);
+
+    for (int k = 0; k < num_topics[t]; k++)
+    {
+        fwrite(log_prob_w[t][k], sizeof(double), size_vocab[t], file);
+    }
+    if (num_classes > 1)
+    {
+        for (int i = 0; i < num_classes-1; i ++)
+        {
+            fwrite(eta[i], sizeof(double), num_topics[t], file);
+        }
+    }
+
+    fflush(file);
+    fclose(file);
+}
+**/
+
+
