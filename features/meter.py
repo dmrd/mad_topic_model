@@ -18,7 +18,7 @@ def meter_ngrams(text):
             current.append(stress)
 
             if len(current) == 6:
-                ngrams.append(current + [since_start, since_comma])
+                ngrams.append(tuple(current + [since_start, since_comma]))
                 since_start = (since_start + 1) % 2
                 since_comma = (since_comma + 1) % 2
 
@@ -28,7 +28,7 @@ def meter_ngrams(text):
 
             if len(current) < 6:
                 current += [-1] * (6 - len(current))
-                ngrams.append(current + [since_start, since_comma])
+                ngrams.append(tuple(current + [since_start, since_comma]))
 
             since_start = 0
             current = []

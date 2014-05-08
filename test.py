@@ -14,8 +14,7 @@ class ExtracterTests(unittest.TestCase):
 
     def test_find_syllable_ngram(self):
         matches = extracter.find_syllable_ngram(self.text, (2, 1, 2))
-        self.assertEqual(matches, [('frankly', 'and', 'boldly'),
-                         ('Nation', 'will', 'endure'), ('endured', 'will', 'revive')])
+        self.assertEqual(matches, [('frankly', 'and', 'boldly'), ('Nation', 'will', 'endure')])
 
 
 class AnalyzerTests(unittest.TestCase):
@@ -54,11 +53,11 @@ class AnalyzerTests(unittest.TestCase):
 
     def test_ngrams(self):
         self.assertEqual(
-            analyzer.syllable_ngrams("It is: overwhelming.", 2), [(1, 1), (1, 4)])
+            analyzer.syllable_ngrams("It is: overwhelming.", 2), [(1, 1), (1, ':'), (':', 4), (4, '.')])
         self.assertEqual(
             analyzer.syllable_count_ngrams(
                 "It is: overwhelming. We should go.", 2),
-            [(2, 4), (4, 3)])
+            [(2, ':'), (':', 4), (4, '.'), ('.', 3), (3, '.')])
 
 
 if __name__ == "__main__":

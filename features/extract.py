@@ -6,7 +6,7 @@ def find_all_matching_ngrams(text, ngram, ngram_extractor, PUNC=True):
         return None
 
     n = len(ngram)
-    word_ngrams = analyzer.word_ngrams(text, n, PUNC=PUNC)
+    word_ngrams = analyzer.word_ngrams(text, n, PUNC=True)
     target_ngrams = ngram_extractor(text, n)
     return list(zip(*filter(lambda x: x[1] == ngram, zip(word_ngrams, target_ngrams)))[0])
 
