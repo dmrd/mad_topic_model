@@ -1,0 +1,19 @@
+number_of_word_types: 2
+number_of_authors: 2
+
+metrics:
+    - word_type: 0
+      number_of_topics: 2
+      size_of_vocab: 5
+      vocab_distribution: [[.2, .2, .2, .2, .2], [.8, .025, .025, .025, .025]]
+      global_alphas: [3, 4]
+      per_author_alphas: [[2, 5], [4, 7]]
+      etas: [[8, 9]]
+    - word_type: 0
+      number_of_topics: 3
+      size_of_vocab: 5
+      vocab_distribution: [[.2, .2, .2, .2, .2], [.8, .025, .025, .025, .025], [1, 0, 0, 0, 0]]
+      global_alphas: [3, 4]
+      per_author_alphas: [[2, 5], [4, 7]]
+      etas: [[8, 9]]
+
