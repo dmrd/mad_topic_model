@@ -15,6 +15,8 @@
 \usepackage{morefloats}
 \usepackage{dsfont}
 \usepackage{tikz}
+\usepackage[square, numbers]{natbib}
+\usepackage[colorlinks,citecolor=red]{hyperref}
 %\usepackage{algorithmicx}
 %\usepackage{algorithm2e}
 \usepackage{algpseudocode}
@@ -50,6 +52,7 @@
 \maketitle
 \large
 \begin{abstract}
+We draw a lot on \citep{Blei2007}.
 \end{abstract}
 \section{Introduction}
 \section{Literature Review}
@@ -61,11 +64,10 @@
 
 
 \newpage
-\begin{thebibliography}{9}
-\end{thebibliography}
+\bibliography{writeup}
+\bibliographystyle{abbrv}
 
 \newpage
-%graphs
 
 \begin{appendix}
 \end{appendix}
