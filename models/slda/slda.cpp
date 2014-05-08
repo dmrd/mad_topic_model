@@ -1070,7 +1070,6 @@ void slda::write_word_assignment(FILE* f, document* doc, double*** phi)
     fflush(f);
 }
 
-
 /*
  * save the model in the text format
  */
@@ -1083,55 +1082,63 @@ void slda::save_model_text(const char * filename, int t)
     //fprintf(file, "alpha: %lf\n", alpha);
     fprintf(file, "number of word types: %d\n", num_word_types);
     fprintf(file, "number of authors: %d\n", num_classes);
+    fprintf(file, "\nmetrics:\n");
 
     for (int t  = 0; t < num_word_types; t++)
     {
-        fprintf(file, "\n");
-        fprintf(file, "word type: %d\n", t);
-        fprintf(file, "number of topics: %d\n", num_topics[t]);
-        fprintf(file, "size of vocab: %d\n", size_vocab[t]);
+        fprintf(file, "    - word type: %d\n", t);
+        fprintf(file, "      number of topics: %d\n", num_topics[t]);
+        fprintf(file, "      size of vocab: %d\n", size_vocab[t]);
 
-        fprintf(file, "vocab distribution: \n"); // in log space
+        fprintf(file, "      vocab distribution: ["); // in log space
         for (int k = 0; k < num_topics[t]; k++)
         {
-            fprintf(file, "vocab for topic %d: ", k); // in log space
+            if (k) { fprintf(file, ", "); }
+            fprintf(file, "[");
             for (int j = 0; j < size_vocab[t]; j ++)
             {
-                fprintf(file, "%lf ", log_prob_w[t][k][j]);
+                fprintf(file, "%lf", log_prob_w[t][k][j]);
+                if (j < size_vocab[t] - 1) { fprintf(file, ", "); }
             }
-            fprintf(file, "\n");
+            fprintf(file, "]");
+        }
+        fprintf(file, "]\n");
+
+        fprintf(file, "      global alphas: [");
+        for (int k = 0; k < num_topics[t]; k++) {
+            fprintf(file, "%lf", as_global[t]->alpha_t[k]);
+            if (k < num_topics[t] - 1) { fprintf(file, ", "); }
         }
 
-        fprintf(file, "global alphas: ");
-        for (int k = 0; k < num_topics[t]; k++)
-            fprintf(file, "%lf ", as_global[t]->alpha_t[k]);
+        fprintf(file, "]\n");
 
-        fprintf(file, "\n");
-
-        fprintf(file, "per author alphas: \n");
+        fprintf(file, "      per author alphas: [");
         for (int a = 0; a < num_classes; a++)
         {
-            fprintf(file, "author %d ", a);
+            if (a) { fprintf(file, ", "); }
+            fprintf(file, "[");
             for (int k = 0; k < num_topics[t]; k++) {
-                fprintf(file, "%lf ", as[t][a]->alpha_t[k]);
+                fprintf(file, "%lf", as[t][a]->alpha_t[k]);
+                if (k < num_topics[t] - 1) { fprintf(file, ", "); }
             }
-            fprintf(file, "\n");
+            fprintf(file, "]");
         }
+        fprintf(file, "]\n");
 
-        if (num_classes > 1)
+        fprintf(file, "      etas: [");
+        for (int i = 0; i < num_classes-1; i ++)
         {
-            fprintf(file, "etas: \n");
-            for (int i = 0; i < num_classes-1; i ++)
-            {
-                fprintf(file, "author: %i", i);
+            if (i) { fprintf(file, ", "); }
+            fprintf(file, "[");
 
-                for (int j = 0; j < num_topics[t]; j ++)
-                {
-                    fprintf(file, "%lf ", eta[t][i][j]);
-                }
-                fprintf(file, "\n");
+            for (int j = 0; j < num_topics[t]; j ++)
+            {
+                fprintf(file, "%lf", eta[t][i][j]);
+                if (j < num_topics[t] - 1) { fprintf(file, ", "); }
             }
+            fprintf(file, "]");
         }
+        fprintf(file, "]\n");
     }
 
     fflush(file);
