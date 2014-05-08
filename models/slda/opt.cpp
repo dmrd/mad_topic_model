@@ -21,6 +21,7 @@
 #include "opt.h"
 #include "slda.h"
 #include "utils.h"
+#include <iostream>
 /*
  * Here the implementation is slightly different from the equations
  * in the paper, we instead use a second-order taylor expansion to approximate
@@ -73,7 +74,7 @@ double softmax_f(const gsl_vector * x, void * opt_param)
             for (k = 0; k < model->num_topics[t]; k ++)
             {
                 a1 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_m[k];
-                
+
                 for (j = 0; j < model->num_topics[t]; j ++)
                 {
                     // WHAT DOES THIS METHOD DO
@@ -84,7 +85,7 @@ double softmax_f(const gsl_vector * x, void * opt_param)
             a2 = 1.0 + 0.5 * a2;
             t0 = log_sum(t0, a1 + log(a2));
         }
-        f -= t0; 
+        f -= t0;
     }
 
     return -(f + f_regularization);
@@ -115,11 +116,11 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
         for (k = 0; k < model->num_topics[t]; k ++)
         {
             idx = model->vec_index(t,l,k);
-            model->eta[t][l][k] = gsl_vector_get(x, idx); 
+            model->eta[t][l][k] = gsl_vector_get(x, idx);
             g = -PENALTY * model->eta[t][l][k];
             gsl_vector_set(df, idx, g);
         }
-    
+
     for (d = 0; d < model->num_docs; d ++)
     {
         for (t = 0; t < model->num_word_types; t ++)
@@ -225,8 +226,12 @@ void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector 
         gsl_vector_set_zero(df);
         for (l = 0; l < model->num_classes-1; l ++)
         {
-            for (t = 0; t < model->num_word_types; t++)
+            for (t = 0; t < model->num_word_types; t++) {
+                std::cout << t << "\n";
+                std::cout << eta_aux[t] << "\n";
+                std::cout << sizeof(double)*model->num_topics[t] << "\n\n";
                 memset(eta_aux[t], 0, sizeof(double)*model->num_topics[t]);
+        }
 
             a1 = 0.0; // \eta_k^T * \bar{\phi}_d
             a2 = 0.0; // 1 + 0.5 * \eta_k^T * Var(z_bar)\eta_k
@@ -257,11 +262,10 @@ void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector 
         }
         gsl_vector_scale(df, exp(-t0));
         gsl_vector_add(df, df_tmp);
-        *f -= t0; 
+        *f -= t0;
     }
     gsl_vector_scale(df, -1.0);
     *f = -(*f + f_regularization);
     delete [] eta_aux;
     gsl_vector_free(df_tmp);
 }
-

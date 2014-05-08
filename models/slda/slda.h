@@ -93,7 +93,7 @@ public:
 
     double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t);
     double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t);
-    double slda_inference(document* doc, double** var_gamma, double*** phi, 
+    double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
 
@@ -107,11 +107,11 @@ public:
     int getDoc(int a, int d);
 
 public:
-    
+
     double * scaling; // scales prior to match author prolificness
-   
+
     int num_docs; /* number of documents*/
-    int * docs_per; // # documents per author, indexed by author 
+    int * docs_per; // # documents per author, indexed by author
     std::vector<std::vector<int> > docAuthors;
 
     double epsilon;
@@ -121,16 +121,17 @@ public:
 
     int num_word_types;
 
-    //vector<vector<vector<double>>>  log_prob_w;
-    double *** log_prob_w; //the log of the topic distribution
-    // indexed by word type, then topic, then word
-    // vector<vector<vector<double>>> eta;
+    //the log of the topic distribution
+    vector< vector < vector < double > > >  log_prob_w;
 
-    double *** eta; //softmax regression, in general, there are num_classes-1 etas, we don't need a intercept here, since \sum_i \bar{z_i} = 1
+    // indexed by word type, then topic, then word
+    // softmax regression, in general, there are num_classes-1 etas, we
+    // don't need a intercept here, since \sum_i \bar{z_i} = 1
+    vector< vector < vector < double > > >  eta;
+
     // indexed first by class type, then by word type, then by word
-    alphas *** as; 
+    alphas *** as;
     alphas ** as_global;
 };
 
 #endif // SLDA_H
-
