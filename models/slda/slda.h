@@ -34,8 +34,10 @@ typedef struct {
 } z_stat;
 
 typedef struct {
-    double ** word_ss; /* indexed by document, the word */
-    double * word_total_ss; /* indexed by word type, then topic */
+    vector<vector<double> > word_ss; /* indexed by document, the word */
+    vector<double> word_total_ss; /* indexed by word type, then topic */
+    //double ** word_ss;
+    //double * word_total_ss;
 
     z_stat * z_bar /* per document */;
     int * labels;
@@ -79,7 +81,7 @@ public:
                     const char * directory);
 
     suffstats * new_suffstats( int t);
-    void free_suffstats(suffstats ** ss, int t);
+    //void free_suffstats(suffstats ** ss, int t);
     void zero_initialize_ss(suffstats * ss, int t);
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);

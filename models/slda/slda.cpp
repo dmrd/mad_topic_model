@@ -176,15 +176,20 @@ suffstats * slda::new_suffstats(int t)
 {
     suffstats * ss = new suffstats;
 
-    // revisit
-    ss->word_total_ss = new double [num_topics[t]];
-    memset(ss->word_total_ss, 0, sizeof(double)*num_topics[t]);
+    vector<double>::iterator it;
+    it = ss->word_total_ss.begin();
+    for (int i = 0; i < num_topics[t]; i ++)
+        ss->word_total_ss.push_back(0);
+    
+    //ss->word_total_ss.insert(it,num_topics[t],0);
+    //ss->word_ss = new double * [num_topics[t]];
 
-    ss->word_ss = new double * [num_topics[t]];
     for (int k = 0; k < num_topics[t]; k ++)
     {
-        ss->word_ss[k] = new double [size_vocab[t]];
-        memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
+        //ss->word_ss[k] = new double [size_vocab[t]];
+        //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
+        cout << size_vocab[t] << "\n";
+        ss->word_ss.push_back(vector<double>(size_vocab[t],0));
     }
 
     int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
@@ -213,10 +218,13 @@ suffstats * slda::new_suffstats(int t)
 
 void slda::zero_initialize_ss(suffstats * ss, int t)
 {
-    memset(ss->word_total_ss, 0, sizeof(double)*num_topics[t]);
+    //memset(ss->word_total_ss, 0, sizeof(double)*num_topics[t]);
+    ss->word_total_ss.assign(num_topics[t],0);
     for (int k = 0; k < num_topics[t]; k ++)
     {
-        memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
+        cout << size_vocab[t] << "\n";
+        ss->word_ss[k].assign(size_vocab[t],0);
+        //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
     }
 
     int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
@@ -528,12 +536,29 @@ void slda::mle(vector<suffstats *> ss, int eta_update, const settings * setting)
             {
                 //cout << ss[t]->word_ss[k][w] << "\n" ;
                 cout << ss[t] << "\n";
-                cout << ss[t]->word_ss << "\n";
+                cout << &(ss[t]->word_ss) << "\n";
+                cout << &(ss[t]->word_ss[k]) << "\n";
+                cout << &(ss[t]->word_total_ss) << "\n";
+                cout << &(ss[t]->word_total_ss[k]) << "\n";
+                cout << &(ss[t]->word_ss[k][w]) << "\n";
+
                 cout << t << "\t" << k << "\t" << w << "\n";
                 if (ss[t]->word_ss[k][w] > 0) {
                     log_prob_w[t][k][w] = (double)log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
+                    cout << ss[t] << "greater than zero \n";
+                    cout << &(ss[t]->word_ss) << "\n";
+                    cout << &(ss[t]->word_ss[k]) << "\n";
+                    cout << &(ss[t]->word_total_ss) << "\n";
+                    cout << &(ss[t]->word_total_ss[k]) << "\n";
+                    cout << &(ss[t]->word_ss[k][w]) << "\n";
                 } else {
                     log_prob_w[t][k][w] = -100.0;
+                    cout << ss[t] << "less than 0 \n";
+                    cout << &(ss[t]->word_ss) << "\n";
+                    cout << &(ss[t]->word_ss[k]) << "\n";
+                    cout << &(ss[t]->word_total_ss) << "\n";
+                    cout << &(ss[t]->word_total_ss[k]) << "\n";
+                    cout << &(ss[t]->word_ss[k][w]) << "\n";
                 }
             }
         }
@@ -1096,8 +1121,9 @@ void slda::save_model_text(const char * filename, int t)
 /**
    Finish this later
 **/
-void slda::free_suffstats(suffstats ** ss, int t)
-{
+//
+//void slda::free_suffstats(suffstats ** ss, int t)
+/*{
     delete [] ss[t]->word_total_ss;
 
     for (int k = 0; k < num_topics[t]; k ++)
@@ -1116,7 +1142,7 @@ void slda::free_suffstats(suffstats ** ss, int t)
     delete [] ss[t]->tot_labels;
 
     delete ss[t];
-}
+/}*/
 
 // return to this later
 void slda::load_model_initialize_ss(suffstats* ss, corpus * c, int t)
