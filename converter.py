@@ -8,16 +8,16 @@
     The convert writes to these documents in an online manner to avoid
     doing tons of data processing before producing results. With that in
     mind, it should be run with Python's -u (unbuffed output) option.
-    Example usage:
-    python -um converter data/quora.csv model.txt author.txt ngram_dict.txt author_dict.txt syllable 2
 
-    Please pardon the verbosity and use of global variables. Just trying to get shit done.
+    Example usage:
+
+    python -um converter data/quora.csv model.txt author.txt ngram_dict.txt author_dict.txt syllable 4
 """
 
-from features import analyzer
-from collections import Counter
 import argparse
 import csv
+from collections import Counter
+from features import analyzer, meter
 
 ngram_index = 0
 ngram_indices = {}
@@ -76,7 +76,8 @@ ngram_parsers = {
     'word': analyzer.word_ngrams,
     'word_count': analyzer.word_count_ngrams,
     'syllable': analyzer.syllable_ngrams,
-    'syllable_count': analyzer.syllable_count_ngrams
+    'syllable_count': analyzer.syllable_count_ngrams,
+    'meter': lambda x, y: meter.meter_ngrams(x)
 }
 
 

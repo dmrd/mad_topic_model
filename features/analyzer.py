@@ -7,6 +7,8 @@ from Levenshtein import ratio
 from etymology_dict import EtymologyDict
 
 
+TRUE_PUNCTUATION = ['!', '(', ')', ',', '-', '.', ':', ';', '?']
+FALSE_PUNCTUATION = ['#', '$', '<', '=', '>', '+', '*', '@', '~', '^']
 PUNCTUATION_TAGS = ['.', ':', ',']
 d = cmudict.dict()
 e = EtymologyDict()
@@ -76,7 +78,9 @@ def syllabic_representation(text):
     >>> [2, ';', 1, 1, 2, '.']
     """
     def to_syllables((word, tag)):
-        if tag in PUNCTUATION_TAGS:
+        if word in FALSE_PUNCTUATION:
+            return 1
+        elif tag in PUNCTUATION_TAGS or word in TRUE_PUNCTUATION:
             return word
         return num_syllables(word)
     return map(to_syllables, tag_text(text))
@@ -148,8 +152,7 @@ def syllable_ngrams(text, n):
     >>> syllable_ngrams("It is: overwhelming.", 2)
     >>> [(1, 1), (1, 4)]
     """
-    syllables = [s for (s, _) in syllable_counts(text)]
-    syllables = sum(syllables, [])
+    syllables = syllabic_representation(text)
     return ngrams(syllables, n)
 
 
@@ -161,7 +164,8 @@ def syllable_count_ngrams(text, n):
     >>> syllable_count_ngrams("It is: overwhelming. We should go.", 2)
     >>> [(2, 4), (4, 3)]
     """
-    syllables = [s for (s, _) in syllable_counts(text, TOTAL=True)]
+    syllables = syllable_counts(text, TOTAL=True)
+    syllables = list(sum(syllables, ()))
     return ngrams(syllables, n)
 
 
@@ -191,7 +195,8 @@ def word_count_ngrams(text, n):
     """
     Returns the n-grams of word counts between punctuation.
     """
-    counts = [s for (s, _) in word_counts(text)]
+    counts = word_counts(text)
+    counts = list(sum(counts, ()))
     return ngrams(counts, n)
 
 
