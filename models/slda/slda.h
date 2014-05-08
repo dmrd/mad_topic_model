@@ -25,6 +25,8 @@
 #include "corpus.h"
 #include <gsl/gsl_matrix.h>
 
+#include <vector>
+using namespace std;
 
 typedef struct {
     double * z_bar_m;
@@ -32,8 +34,10 @@ typedef struct {
 } z_stat;
 
 typedef struct {
-    double ** word_ss; /* indexed by document, the word */
-    double * word_total_ss; /* indexed by word type, then topic */
+    vector<vector<double> > word_ss; /* indexed by document, the word */
+    vector<double> word_total_ss; /* indexed by word type, then topic */
+    //double ** word_ss;
+    //double * word_total_ss;
 
     z_stat * z_bar /* per document */;
     int * labels;
@@ -77,19 +81,19 @@ public:
                     const char * directory);
 
     suffstats * new_suffstats( int t);
-    void free_suffstats(suffstats ** ss, int t);
+    //void free_suffstats(suffstats ** ss, int t);
     void zero_initialize_ss(suffstats * ss, int t);
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
-    void mle(suffstats ** ss, int eta_update, const settings * setting);
+    void mle( std::vector<suffstats *> ss, int eta_update, const settings * setting);
 
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
 
     double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t);
     double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t);
-    double slda_inference(document* doc, double** var_gamma, double*** phi, 
+    double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
 
@@ -103,11 +107,11 @@ public:
     int getDoc(int a, int d);
 
 public:
-    
+
     double * scaling; // scales prior to match author prolificness
-   
+
     int num_docs; /* number of documents*/
-    int * docs_per; // # documents per author, indexed by author 
+    int * docs_per; // # documents per author, indexed by author
     std::vector<std::vector<int> > docAuthors;
 
     double epsilon;
@@ -117,13 +121,17 @@ public:
 
     int num_word_types;
 
-    double *** log_prob_w; //the log of the topic distribution
+    //the log of the topic distribution
+    vector< vector < vector < double > > >  log_prob_w;
+
     // indexed by word type, then topic, then word
-    double *** eta; //softmax regression, in general, there are num_classes-1 etas, we don't need a intercept here, since \sum_i \bar{z_i} = 1
+    // softmax regression, in general, there are num_classes-1 etas, we
+    // don't need a intercept here, since \sum_i \bar{z_i} = 1
+    vector< vector < vector < double > > >  eta;
+
     // indexed first by class type, then by word type, then by word
-    alphas *** as; 
+    alphas *** as;
     alphas ** as_global;
 };
 
 #endif // SLDA_H
-
