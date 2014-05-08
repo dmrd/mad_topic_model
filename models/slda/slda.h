@@ -105,8 +105,21 @@ public:
     void updatePrior();
 
     int vec_index(int t, int l, int k);
+    //int vec_index2(int t, int l, int k, vector<int> stoch_authors);
+
     int getDoc(int a, int d);
 
+    //stochastic optimization
+    /**
+
+    int vec_index2(int t, int l, int k, int num_auth);
+    void slda::mle_stoch(vector<suffstats *> ss, int eta_update, const settings * setting,
+        vector<int> stoch_authors, vector<double> author_prob, vector<int> stoch_docs, vector<double> doc_prob);
+
+    double slda::slda_inference_stoch(document* doc, double ** var_gamma, double *** phi,
+        alphas *** as, int d, vector<int> stoch_authors, vector<double>
+        author_prob, const settings * setting);
+    **/
 public:
 
     double * scaling; // scales prior to match author prolificness
