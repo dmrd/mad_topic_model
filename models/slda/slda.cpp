@@ -86,6 +86,34 @@ void slda::init_alpha(double epsilon2)
     }
 }
 
+/*
+ * Initialize per author dirichlet alphas
+ */
+void slda::init_global_as(double epsilon2)
+{
+    as_global = new alphas * [num_word_types];
+
+    for (size_t t = 0; t < num_word_types; t++)
+    {
+        as_global[t] = new alphas;
+
+        int KK = num_topics[t];
+        as_global[t]->alpha_sum_1 = KK*epsilon2;
+        as_global[t]->alpha_sum_2 = KK*epsilon2;
+        as_global[t]->alpha_sum_t = 2*KK*epsilon2;
+
+        as_global[t]->alpha_1 = new double [KK];
+        as_global[t]->alpha_2 = new double [KK];
+        as_global[t]->alpha_t = new double [KK];
+        for (int k = 0; k < KK; k++)
+        {
+            as_global[t]->alpha_1[k] = epsilon2;
+            as_global[t]->alpha_2[k] = epsilon2;
+            as_global[t]->alpha_t[k] = 2*epsilon2;
+        }
+    }
+}
+
 void slda::init(double epsilon2, int * num_topics_,
                 const corpus * c)
 {
@@ -101,6 +129,7 @@ void slda::init(double epsilon2, int * num_topics_,
     num_classes = c->num_classes;
 
     init_alpha(epsilon2);
+    init_global_as(epsilon2);
 
     // iterate through each type of word
     for (int t = 0; t < num_word_types; t ++)
@@ -1083,8 +1112,9 @@ void slda::save_model_text(const char * filename, int t)
         for (int a = 0; a < num_classes; a++)
         {
             fprintf(file, "author %d ", a);
-            for (int k = 0; k < num_topics[t]; k++)
-                fprintf(file, "%lf ", as[a][t]->alpha_t[k]);
+            for (int k = 0; k < num_topics[t]; k++) {
+                fprintf(file, "%lf ", as[t][a]->alpha_t[k]);
+            }
             fprintf(file, "\n");
         }
 

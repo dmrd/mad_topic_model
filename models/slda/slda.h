@@ -100,6 +100,7 @@ public:
     void save_gamma(char* filename, double*** gamma, int num_docs);
     void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);
+    void init_global_as(double epsilon2);
 
     void updatePrior();
 
