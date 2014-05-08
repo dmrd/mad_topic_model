@@ -29,3 +29,19 @@ BE LAID OUT IN THE SAME ORDER IN EACH FILE!!!!
 [topic#1], [topic#2], dots... are the number of topics for each word type
 
 As of now, only [est] and [random] options are supported. 
+
+----------------------------------------------------------------------
+
+Data format
+
+(1) [data] is a file where each line is of the form:
+
+     [M] [term_1]:[count] [term_2]:[count] ...  [term_N]:[count]
+
+where [M] is the number of unique terms in the document, and the
+[count] associated with each term is how many times that term appeared
+in the document. 
+
+(2) [label] is a file where each line is the corresponding label for [data].
+The labels must be 0, 1, ..., C-1, if we have C classes.
+
