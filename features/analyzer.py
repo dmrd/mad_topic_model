@@ -78,9 +78,7 @@ def syllabic_representation(text):
     >>> [2, ';', 1, 1, 2, '.']
     """
     def to_syllables((word, tag)):
-        if word in FALSE_PUNCTUATION:
-            return 1
-        elif tag in PUNCTUATION_TAGS or word in TRUE_PUNCTUATION:
+        if tag in PUNCTUATION_TAGS or word in TRUE_PUNCTUATION:
             return word
         return num_syllables(word)
     return map(to_syllables, tag_text(text))
