@@ -34,7 +34,7 @@ document::document(int* len, int  wt)
     init(len,wt);
 }
 
-// construcs a document with wt wordtypes
+// constructs a document with wt wordtypes
 document::document(int wt)
 {
     wordTypes = wt;
@@ -167,14 +167,12 @@ void corpus::read_data(const char * data_filename0,
     {
         nd = 0;
         nw[t] = 0;
-        std::cout << data_filename[t] << "\n";
+
         fileptr = fopen(data_filename[t].c_str(), "r");
         printf("\nreading data from %s\n", data_filename[t].c_str());
 
-        std::cout << "for-t\n";
         while ((fscanf(fileptr, "%10d", &length) != EOF))
         {
-            cout << length << "\n";
             document * doc;
 
             if (t == 0) {
@@ -198,12 +196,15 @@ void corpus::read_data(const char * data_filename0,
                 }
             }
             num_total_words[t] += doc->total[t];
-            docs.push_back(doc);
+            // Only count documents once
+            if (t == 0) {
+                docs.push_back(doc);
+            }
             nd++;
         }
         fclose(fileptr);
+        num_docs = nd;
     }
-    num_docs = nd;
     size_vocab = nw;
     printf("number of docs  : %d\n", nd);
 
@@ -225,8 +226,9 @@ void corpus::read_data(const char * data_filename0,
         {
             num_classes = label + 1;
         }
-        nd ++;
+        nd++;
     }
+
     assert(nd == int(docs.size()));
     printf("number of classes : %d\n\n", num_classes);
 }

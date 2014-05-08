@@ -52,21 +52,21 @@ int main(int argc, char* argv[])
 
         double alpha = atof(argv[6]);
         int * num_topics = new int[num_word_types];
-        
+
         char * init_method = argv[7];
         char * directory = argv[8];
         printf("models will be saved in %s\n", directory);
         make_directory(directory);
 
-        //initialize this
+        // initialize this
         for (int t = 0; t < num_word_types;t++)
         {
-            printf("number of topics is %i for t = %i\n", num_topics[t],t);
             num_topics[t] = atoi(argv[9+t]);
+            printf("number of topics is %i for t = %i\n", num_topics[t],t);
         }
 
         // computes mapping between document index
-        // and author specific document index 
+        // and author specific document index
         c->findDocsPer();
 
         slda model;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
     if (strcmp(argv[1], "inf") == 0)
     {
-        
+
         int num_word_types = (int)(atof(argv[2]));
         corpus * c = new corpus(num_word_types);
 

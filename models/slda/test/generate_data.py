@@ -15,7 +15,8 @@ import argparse
 import numpy as np
 from collections import defaultdict
 
-def generate_documents(n_authors, n_topics, n_docs, n_words):
+def generate_documents(n_authors, n_topics, n_docs, n_words,
+                       n_words_per_doc):
     """
     Implements generative process for LDA
 
@@ -45,7 +46,7 @@ def generate_documents(n_authors, n_topics, n_docs, n_words):
             doc = defaultdict(lambda: 0)
             doc['AUTHOR'] = a
             word_counts = np.zeros(n_words)
-            words_in_doc = np.random.poisson(10)
+            words_in_doc = np.random.poisson(n_words_per_doc)
 
             # This documents multinomial distribution over topics
             doc_topic_dist = np.random.dirichlet(author_p[a], words_in_doc)
@@ -99,13 +100,17 @@ if __name__ == "__main__":
     parser.add_argument('--n_words',
                         help='vocabulary size',
                         default=1500, type=int)
+    parser.add_argument('--n_words_per_doc',
+                        help='Mean number of words per doc',
+                        default=1000, type=int)
     args = parser.parse_args()
 
     # Write a file for each ngram type
     type_docs = None
     for i in range(args.n_types):
         type_docs = generate_documents(args.n_authors, args.n_topics,
-                                       args.n_docs, args.n_words)
+                                       args.n_docs, args.n_words,
+                                       args.n_words_per_doc)
         save_docs(type_docs, args.prefix, i)
 
     # Go through once and write the label file
