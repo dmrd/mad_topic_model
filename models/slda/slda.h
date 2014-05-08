@@ -68,9 +68,11 @@ public:
     void fitDirichlet(gsl_matrix * mat);
 
 
-    void save_model(const char * filename, int t);
+    void save_model(const char * filename);
     void save_model_text(const char * filename, int t);
-    void load_model(const char * model_filename);
+    void load_model(const char * filename);
+
+
     void infer_only(corpus * c, const settings * setting,
                     const char * directory);
 
@@ -91,8 +93,8 @@ public:
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
 
-    void save_gamma(char* filename, double*** gamma, int num_docs, int t);
-    void write_word_assignment(FILE* f, document* doc, double*** phi, int t);
+    void save_gamma(char* filename, double*** gamma, int num_docs);
+    void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);
 
     void updatePrior();
