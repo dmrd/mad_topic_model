@@ -688,9 +688,9 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
     }
 
     //t0 stors likelihood contributions
-    t0 = 0.0;
     for (t= 0; t < num_word_types; t++)
     {
+        t0 = 0.0;
         for (k = 0; k < num_topics[t]; k++)
         {
             likelihood += -lgamma(as[t][a]->alpha_t[k])
@@ -716,14 +716,17 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
     for (l = 0; l < num_classes-1; l ++)
     {
         t1 = 1.0;
-        for (n = 0; n < doc->length[t]; n ++)
+        for (t = 0; t < num_topics; t++)
         {
-            t2 = 0.0;
-            for (k = 0; k < num_topics[t]; k ++)
+            for (n = 0; n < doc->length[t]; n ++)
             {
-                t2 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
+                t2 = 0.0;
+                for (k = 0; k < num_topics[t]; k ++)
+                {
+                    t2 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
+                }
+                t1 *= t2;
             }
-            t1 *= t2;
         }
         t0 += t1;
     }
