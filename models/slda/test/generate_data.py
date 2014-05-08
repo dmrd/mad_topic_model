@@ -71,8 +71,13 @@ def save_docs(docs, prefix, topic_type):
     """
     with open(prefix + "_" + str(topic_type), 'w') as f:
         for doc in docs:
-            f.write(str(len(doc)) + " ")
+            l = len(doc)
+            if "AUTHOR" in doc:
+                l -= 1
+            f.write(str(l) + " ")
             for k in doc:
+                if k is "AUTHOR":
+                    continue
                 f.write("{}:{} ".format(k, doc[k]))
             f.write("\n");
 

@@ -41,6 +41,7 @@ document::document(int wt)
     words = new int *  [wordTypes];
     counts = new int * [wordTypes];
     total = new int[wordTypes];
+    length = new int[wordTypes];
     label = -1;
 
 
@@ -49,8 +50,8 @@ document::document(int wt)
 // sense length of document in t^th word time
 void document::set_length(int t, int len)
 {
-    words[t] = new int [length[t]];
-    counts[t] = new int [length[t]];
+    words[t] = new int [len];
+    counts[t] = new int [len];
     length[t] = len;
     total[t] = 0;
 }
@@ -109,7 +110,7 @@ corpus::corpus()
     num_total_words = NULL;
     num_word_types = 1;
 
-   
+
 }
 
 corpus::corpus(int T)
@@ -150,33 +151,37 @@ void corpus::read_data(const char * data_filename0,
 
     nd = 0;
     int * nw = new int [num_word_types];
-    const char ** data_filename = new const char * [num_word_types];
+    string * data_filename = new string [num_word_types];
 
     for (t = 0; t < num_word_types; t++)
     {
-        char * app;
-        sprintf(app, "_%i", t);
-        std::string s1 = std::string(data_filename0);
-        std::string s2 = std::string(app);
+        std::stringstream filename;
+        filename << data_filename0 << "_" << t;
 
-        data_filename[t] = (s1+s2).c_str();
+        data_filename[t] = filename.str();
     }
 
     FILE * fileptr;
 
     for (t = 0; t < num_word_types; t ++)
     {
+        nd = 0;
         nw[t] = 0;
-        fileptr = fopen(data_filename[t], "r");
-        printf("\nreading data from %s\n", data_filename[t]);
+        std::cout << data_filename[t] << "\n";
+        fileptr = fopen(data_filename[t].c_str(), "r");
+        printf("\nreading data from %s\n", data_filename[t].c_str());
 
+        std::cout << "for-t\n";
         while ((fscanf(fileptr, "%10d", &length) != EOF))
         {
+            cout << length << "\n";
             document * doc;
-            if (t == 0)
-                 doc = new document(t);
-            else
-                 doc = docs[nd];
+
+            if (t == 0) {
+                doc = new document(num_word_types);
+            } else {
+                doc = docs[nd];
+            }
 
             doc->set_length(t,length);
 
@@ -246,7 +251,7 @@ void corpus::findDocsPer()
     docsPer = new int[num_classes];
     for (int a = 0; a < num_classes; a++)
     {
-        docAuthors.push_back(vector<int>());        
+        docAuthors.push_back(vector<int>());
         docsPer[a] = 0;
     }
 
