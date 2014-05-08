@@ -182,6 +182,7 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
     delete [] eta_aux;
     gsl_vector_free(df_tmp);
 }
+
 void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df)
 {
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
