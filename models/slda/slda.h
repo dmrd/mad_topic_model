@@ -25,6 +25,8 @@
 #include "corpus.h"
 #include <gsl/gsl_matrix.h>
 
+#include <vector>
+using namespace std;
 
 typedef struct {
     double * z_bar_m;
@@ -82,7 +84,7 @@ public:
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
-    void mle(suffstats ** ss, int eta_update, const settings * setting);
+    void mle( std::vector<suffstats *> ss, int eta_update, const settings * setting);
 
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
@@ -117,8 +119,11 @@ public:
 
     int num_word_types;
 
+    //vector<vector<vector<double>>>  log_prob_w;
     double *** log_prob_w; //the log of the topic distribution
     // indexed by word type, then topic, then word
+    // vector<vector<vector<double>>> eta;
+
     double *** eta; //softmax regression, in general, there are num_classes-1 etas, we don't need a intercept here, since \sum_i \bar{z_i} = 1
     // indexed first by class type, then by word type, then by word
     alphas *** as; 

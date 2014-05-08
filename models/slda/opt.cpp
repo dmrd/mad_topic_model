@@ -32,7 +32,7 @@ double softmax_f(const gsl_vector * x, void * opt_param)
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
     double PENALTY = gsl_param->PENALTY;
     slda * model = gsl_param->model;
-    suffstats ** ss = gsl_param->ss;
+    std::vector<suffstats *> ss = gsl_param->ss;
 
     double f, t0, a1 = 0.0, a2 = 0.0;
 
@@ -95,7 +95,7 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
     double PENALTY = gsl_param->PENALTY;
     slda * model = gsl_param->model;
-    suffstats ** ss = gsl_param->ss;
+    std::vector<suffstats *> ss = gsl_param->ss;
 
     gsl_vector_set_zero(df);
     gsl_vector * df_tmp = gsl_vector_alloc(df->size);
@@ -180,7 +180,7 @@ void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector 
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
     double PENALTY = gsl_param->PENALTY;
     slda * model = gsl_param->model;
-    suffstats ** ss = gsl_param->ss;
+    std::vector<suffstats *> ss = gsl_param->ss;
     gsl_vector_set_zero(df);
     gsl_vector * df_tmp = gsl_vector_alloc(df->size);
 

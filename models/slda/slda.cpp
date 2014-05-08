@@ -31,6 +31,9 @@
 #include <gsl/gsl_randist.h>
 //# "fitDirichlet"
 
+#include <vector>
+using namespace std;
+
 const int NUM_INIT = 50;
 const int LAG = 10;
 const int LDA_INIT_MAX = 0;
@@ -96,7 +99,6 @@ void slda::init(double epsilon2, int * num_topics_,
 
     num_word_types = c->num_word_types;
     num_docs = c->num_docs;
-    num_classes = c->num_classes;
 
     size_vocab = c->size_vocab;
     num_classes = c->num_classes;
@@ -337,36 +339,20 @@ void slda::v_em(corpus * c, const settings * setting,
 {
     char filename[100];
     int * max_length = c->max_corpus_length();
-    double ***var_gamma, ***phi, **lambda;
+    
     double likelihood, likelihood_old = 0, converged = 1;
     int d, n, i, t; // iterates
     double L2penalty = setting->PENALTY;
 
-    // allocate variational parameters
-    var_gamma = new double ** [c->num_docs];
-    for (d = 0; d < c->num_docs; d++) {
-        var_gamma[d] = new double * [num_word_types];
-    }
 
-
-    phi = new double ** [num_word_types];
-    for (t = 0; t < num_word_types; t++)
-    {
-        phi[t] = new double * [max_length[t]];
-        for (d = 0; d < c->num_docs; d++)
-            var_gamma[d][t] = new double [num_topics[t]];
-
-        for (n = 0; n < max_length[t]; n++)
-            phi[t][n] = new double [num_topics[t]];
-    }
 
     printf("initializing ...\n");
 
-    suffstats ** ss = new suffstats * [num_word_types];
+    std::vector<suffstats * > ss;
 
     for (t = 0; t < num_word_types; t++)
     {
-        ss[t] = new_suffstats(t);
+        ss.push_back(new_suffstats(t));
         //if (strcmp(start, "seeded") == 0)
         //{
         //    corpus_initialize_ss(ss[t], c);
@@ -383,6 +369,32 @@ void slda::v_em(corpus * c, const settings * setting,
         //}
     }
     mle(ss, 0, setting);
+
+    // allocate variational parameters
+    double *** var_gamma, *** phi, ** lambda;
+    var_gamma = new double ** [c->num_docs];
+    for (d = 0; d < c->num_docs; d++) {
+        var_gamma[d] = new double * [num_word_types];
+    }
+
+    phi = new double ** [num_word_types];
+    for (t = 0; t < num_word_types; t++)
+    {
+        phi[t] = new double * [max_length[t]];
+        for (d = 0; d < c->num_docs; d++)
+        {
+            cout << t << "\t" << d << "\t" << num_topics[t]  << "\n";
+            var_gamma[d][t] = new double [num_topics[t]];
+            var_gamma[d][t][0] = 0;
+        }
+
+        for (n = 0; n < max_length[t]; n++)
+            phi[t][n] = new double [num_topics[t]];
+    }
+
+    cout << var_gamma << "\n";
+    cout << var_gamma[0] << "\n";
+    cout << var_gamma[0][0] << "\n";
 // COME BACK LATER
     FILE * likelihood_file = NULL;
     sprintf(filename, "%s/likelihood.dat", directory);
@@ -406,6 +418,10 @@ void slda::v_em(corpus * c, const settings * setting,
         for (d = 0; d < c->num_docs; d++)
         {
             if ((d % 100) == 0) printf("document %d\n", d);
+            cout << d << "\n";
+
+            cout << var_gamma[0] << "\n";
+            cout << var_gamma[d] << "\n";
             if (true)
                 likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
             for (t=0; t< num_word_types; t++)
@@ -415,7 +431,7 @@ void slda::v_em(corpus * c, const settings * setting,
         updatePrior(var_gamma);
 
         printf("likelihood: %10.10f\n", likelihood);
-        // m-step
+        // m-st
         printf("**** m-step ****\n");
 
         mle(ss, ETA_UPDATE, setting);
@@ -443,11 +459,13 @@ void slda::v_em(corpus * c, const settings * setting,
         }
     }
 
+
+
     // output the final model
     sprintf(filename, "%s/final.model", directory);
     save_model(filename);
     sprintf(filename, "%s/final.gamma", directory);
-    save_gamma(filename, var_gamma, c->num_docs);
+    //save_gamma(filename, var_gamma, c->num_docs);
 
     for (t =0; t < num_word_types; t++)
     {
@@ -463,6 +481,10 @@ void slda::v_em(corpus * c, const settings * setting,
     {
         //final inference
         if ((d % 100) == 0) printf("final e step document %d\n", d);
+
+        cout << var_gamma[0] << "\n";
+        cout << var_gamma[d] << "\n";
+
         likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d ,setting);
 
         write_word_assignment(w_asgn_file, c->docs[d], phi);
@@ -478,9 +500,9 @@ void slda::v_em(corpus * c, const settings * setting,
     }
     delete [] var_gamma;
 
+    //~std::vector<suffstats *>(ss);
     for (t = 0; t < num_word_types; t++)
     {
-        free_suffstats(ss, t);
         for (n = 0; n < max_length[t]; n++)
             delete [] phi[t][n];
         delete [] phi[t];
@@ -495,7 +517,7 @@ int slda::vec_index(int t, int l, int k)
     return 0;
 }
 
-void slda::mle(suffstats ** ss, int eta_update, const settings * setting)
+void slda::mle(vector<suffstats *> ss, int eta_update, const settings * setting)
 {
     int k, w, t;
 
@@ -504,9 +526,12 @@ void slda::mle(suffstats ** ss, int eta_update, const settings * setting)
         {
             for (w = 0; w < size_vocab[t]; w++)
             {
+                //cout << ss[t]->word_ss[k][w] << "\n" ;
+                cout << ss[t] << "\n";
+                cout << ss[t]->word_ss << "\n";
                 cout << t << "\t" << k << "\t" << w << "\n";
                 if (ss[t]->word_ss[k][w] > 0) {
-                    log_prob_w[t][k][w] = log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
+                    log_prob_w[t][k][w] = (double)log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
                 } else {
                     log_prob_w[t][k][w] = -100.0;
                 }
@@ -714,7 +739,7 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
     return likelihood;
 }
 
-double slda::slda_inference(document* doc, double** var_gamma, double*** phi,
+double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
                             alphas *** as, int d, const settings * setting)
 {
     int k, n, var_iter, l,t ;
@@ -740,6 +765,11 @@ double slda::slda_inference(document* doc, double** var_gamma, double*** phi,
         for (k = 0; k < num_topics[t]; k++)
         {
             /* CURRENT SEGFAULTS WHEN IT MAKES IT THIS FAR */
+            cout << t << "\t" << k << "\t" << var_gamma << "\t" << "\n";
+            cout << t << "\t" << k << "\t" << var_gamma[t] << "\t" << "\n";
+
+            cout <<  as[t][a]->alpha_t[k] << "\t" << doc->total[t] << "\t" << num_topics[t] << "\n";
+            var_gamma[t][k] = 0;
             var_gamma[t][k] = as[t][a]->alpha_t[k] + (doc->total[t]/((double) num_topics[t]));
             digamma_gam[t][k] = digamma(var_gamma[t][k]);
             for (n = 0; n < doc->length[t]; n++)
