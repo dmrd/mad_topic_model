@@ -1,0 +1,47 @@
+some notes: 
+1. word type is the type of n gram
+
+2. number of topics is the number of topics for that word type
+
+3. vocab distribution is a paremeter vector 
+summing to one which is a distribution over the probability of each word showing up in a topic
+
+4. global alphas are global dirichlet parameters. must be positive but need not sum to 1. 
+
+5. per author authors are dirichlets for each author. must be positive but need not sum to 1. 
+
+6. to get proportions from dirichlet vector v, return v = v/sum_i v[i]
+
+7. etas are logistic regresion parameter: there are (number of authors - 1) etas but these are not useful for the visualizer so dont read etas
+
+sample
+___________________________________
+number of word types: 2
+number of authors: 2
+
+word type: 0
+number of topics: 2
+size of vocab: 5
+vocab distribution:
+vocab for topic 0: .2 .2 .2 .2 .2
+vocab for topic 1: .8 .025 .025 .025 .025
+global alphas: 3 4
+per author alphas: 
+author 0: 2 5
+author 1: 4 7
+etas:
+author 0: 8 9
+
+word type: 1
+number of topics: 3
+size of vocab: 5
+vocab distribution:
+vocab for topic 0: .2 .2 .2 .2 .2
+vocab for topic 1: .8 .025 .025 .025 .025
+global alphas: 3 4 3
+per author alphas: 
+author 0: 2 5 1
+author 1: 4 7 9
+etas:
+author 0: 8 9 4
+
