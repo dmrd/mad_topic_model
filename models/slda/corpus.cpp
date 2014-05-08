@@ -43,6 +43,7 @@ document::document(int wt)
     total = new int[wordTypes];
     label = -1;
 
+
 }
 
 // sense length of document in t^th word time
@@ -107,6 +108,8 @@ corpus::corpus()
     num_classes = 0;
     num_total_words = NULL;
     num_word_types = 1;
+
+   
 }
 
 corpus::corpus(int T)
@@ -118,6 +121,8 @@ corpus::corpus(int T)
     num_total_words = new int [num_word_types];
     for (int t = 0; t < T; t ++)
         num_total_words[t] = 0;
+
+
 }
 
 
@@ -234,4 +239,25 @@ int * corpus::max_corpus_length() {
         }
     }
     return max_length;
+}
+
+void corpus::findDocsPer()
+{
+    docsPer = new int[num_classes];
+    for (int a = 0; a < num_classes; a++)
+    {
+        docAuthors.push_back(vector<int>());        
+        docsPer[a] = 0;
+    }
+
+    for (int d = 0; d < docs.size(); d++)
+    {
+        int a = docs[d]->label;
+        docsPer[docs[d]->label]++;
+        docAuthors[a].push_back(d);
+    }
+
+
+
+
 }

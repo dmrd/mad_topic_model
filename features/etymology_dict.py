@@ -1,3 +1,4 @@
+import os
 from nltk import PorterStemmer, WordNetLemmatizer
 from Levenshtein import ratio
 
@@ -8,7 +9,9 @@ class EtymologyDict(object):
     lemmatizer = WordNetLemmatizer()
 
     def load(self):
-        complete_dict = file("origin/output.txt").readlines()
+        dir = os.path.dirname(__file__)
+        filename = os.path.join(dir, 'origin/output.txt')
+        complete_dict = file(filename).readlines()
         for line in complete_dict:
             split = line.split(',')
             self.d[split[0].strip()] = split[1].strip()

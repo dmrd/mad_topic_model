@@ -65,6 +65,10 @@ int main(int argc, char* argv[])
             num_topics[t] = atoi(argv[9+t]);
         }
 
+        // computes mapping between document index
+        // and author specific document index 
+        c->findDocsPer();
+
         slda model;
         model.init(alpha, num_topics , c);
         model.v_em(c, &setting, init_method, directory);
@@ -88,8 +92,10 @@ int main(int argc, char* argv[])
         printf("\nresults will be saved in %s\n", directory);
         make_directory(directory);
 
+        c->findDocsPer();
+
         slda model;
-        model.load_model(model_filename);
+        //model.load_model(model_filename);
         model.infer_only(c, &setting, directory);
     }
 
