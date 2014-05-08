@@ -177,7 +177,6 @@ suffstats * slda::new_suffstats(int t)
     {
         //ss->word_ss[k] = new double [size_vocab[t]];
         //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
-        cout << size_vocab[t] << "\n";
         ss->word_ss.push_back(vector<double>(size_vocab[t],0));
     }
 
@@ -211,7 +210,6 @@ void slda::zero_initialize_ss(suffstats * ss, int t)
     ss->word_total_ss.assign(num_topics[t],0);
     for (int k = 0; k < num_topics[t]; k ++)
     {
-        cout << size_vocab[t] << "\n";
         ss->word_ss[k].assign(size_vocab[t],0);
         //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
     }
@@ -411,7 +409,7 @@ void slda::v_em(corpus * c, const settings * setting,
         for (d = 0; d < c->num_docs; d++)
         {
             if ((d % 100) == 0) printf("document %d\n", d);
-
+            std::cout << d << "\n";
             if (true)
                 likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
             for (t=0; t< num_word_types; t++)
