@@ -409,7 +409,6 @@ void slda::v_em(corpus * c, const settings * setting,
         for (d = 0; d < c->num_docs; d++)
         {
             if ((d % 100) == 0) printf("document %d\n", d);
-            std::cout << d << "\n";
             likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
             for (t=0; t< num_word_types; t++) {
                 likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t], ss[t], ETA_UPDATE, d,  t, setting);
@@ -544,8 +543,6 @@ void slda::mle(vector<suffstats *> ss, int eta_update, const settings * setting)
     for (t = 0; t< num_word_types; t++)
         opt_size += num_topics[t];
     opt_size = opt_size * (num_classes-1);
-
-    std::cout << opt_size << "\n";
 
 	int l;
 
@@ -710,13 +707,11 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
         likelihood += t0 / (double)(doc->total[t]); 	//eta_k*\bar{\phi}
     }
 
-    std::cout << "c3: " << doc->length[t] << "\n";
-
     t0 = 1.0; //the class model->num_classes-1
     for (l = 0; l < num_classes-1; l ++)
     {
         t1 = 1.0;
-        for (t = 0; t < num_topics; t++)
+        for (t = 0; t < num_word_types; t++)
         {
             for (n = 0; n < doc->length[t]; n ++)
             {
@@ -730,7 +725,6 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
         }
         t0 += t1;
     }
-    std::cout << "c4\n";
     likelihood -= log(t0);
     for (t=0; t< num_word_types; t++)
         delete[] dig[t];
@@ -794,7 +788,6 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
     while ((converged > setting->VAR_CONVERGED) && ((var_iter < setting->VAR_MAX_ITER) || (setting->VAR_MAX_ITER == -1)))
     {
         var_iter++;
-        if (d == 33) { std::cout << "iter: " << var_iter << "\n"; }
 
         for (t = 0; t < num_word_types; t++)
         {
@@ -875,9 +868,8 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
             }
 
         }
-        if (d == 33) { std::cout << "Done looping n\n"; }
+
         likelihood = slda_compute_likelihood(doc, phi, var_gamma);
-        if (d == 33) { std::cout << "Done checking likelihood\n"; }
         assert(!isnan(likelihood));
         converged = fabs((likelihood_old - likelihood) / likelihood_old);
         likelihood_old = likelihood;
