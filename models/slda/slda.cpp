@@ -115,6 +115,24 @@ void slda::init_global_as(double epsilon2)
     }
 }
 
+void slda::init_dg(int num_docs)
+{
+    dg = new digammas ** [num_word_types];
+    for (size_t t = 0; t < num_word_types; t++)
+    {
+        dg[t] = new digammas * [num_docs];
+        for (size_t d = 0; d < num_docs; d ++)
+        {
+            dg[t][d] = new digammas;
+            for (size_t k = 0; k < num_topics[t]; k ++)
+            {
+                dg[t][d]->digamma_vec.push_back(0);
+            }
+        }
+
+    }
+}
+
 void slda::init(double epsilon2, int * num_topics_,
                 const corpus * c)
 {
@@ -132,6 +150,7 @@ void slda::init(double epsilon2, int * num_topics_,
 
     init_alpha(epsilon2);
     init_global_as(epsilon2);
+    init_dg(c->num_docs);
 
     // iterate through each type of word
     for (int t = 0; t < num_word_types; t++)
@@ -346,11 +365,16 @@ void slda::updatePrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
             gsl_matrix * mat = gsl_matrix_alloc(docs_per[a],num_topics[t]);
             gsl_vector * v;
 
-            for (int d = 0; d < docs_per[a]; d++)
+            for (int dd = 0; dd < docs_per[a]; dd++)
             {
-                int dd = getDoc(a,d);
+                int d = getDoc(a,dd);
+
+                // digamma of sum
+                double digsum = dg[t][d]->digamma_sum;
+                std::vector<double> dig = dg[t][d]->digamma_vec;
+
                 for (int k = 0; k < num_topics[t]; k++)
-                    gsl_matrix_set(mat, d, k, var_gamma[dd][t][k]);
+                    gsl_matrix_set(mat, dd, k, exp(dig[k]-digsum));
             }
             if(!isSmoothed)
                 v = dirichlet_mle(mat);
@@ -501,9 +525,11 @@ void slda::v_em(corpus * c, const settings * setting,
             }
         }
 
-        //if (i > 100)
-        //    updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-
+        if (i % 5 == 0)
+        {
+            cout << "calling update prior";
+            updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+        }
         printf("likelihood: %10.10f\n", likelihood);
         // m-st
         printf("**** m-step ****\n");
@@ -745,7 +771,8 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
 }
 
 
-double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_gamma)
+double slda::slda_compute_likelihood(document* doc, double*** phi, 
+    double** var_gamma, int d)
 {
     double likelihood = 0, var_gamma_sum = 0, t0 = 0.0, t1 = 0.0, t2 = 0.0;
 
@@ -769,9 +796,12 @@ double slda::slda_compute_likelihood(document* doc, double*** phi, double** var_
         for (k = 0; k < num_topics[t]; k++)
         {
             dig[t][k] = digamma(var_gamma[t][k]);
+            dg[t][d]->digamma_vec[k] = dig[t][k];
+
             var_gamma_sum += var_gamma[t][k];
         }
         digsum[t] = digamma(var_gamma_sum);
+        dg[t][d]->digamma_sum = digsum[t];
         //computes contribution of Dirichlet paraemter sums to log likelihood
         likelihood += lgamma((as[t][a]->alpha_sum_t)) - lgamma(var_gamma_sum);
     }
@@ -857,6 +887,7 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
             digamma_gam[t][k] = digamma(var_gamma[t][k]);
             for (n = 0; n < doc->length[t]; n++)
                 phi[t][n][k] = 1.0/(double)(num_topics[t]);
+            
         }
     }
 
@@ -962,7 +993,7 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
 
         }
 
-        likelihood = slda_compute_likelihood(doc, phi, var_gamma);
+        likelihood = slda_compute_likelihood(doc, phi, var_gamma, d);
         assert(!isnan(likelihood));
         converged = fabs((likelihood_old - likelihood) / likelihood_old);
         likelihood_old = likelihood;
@@ -1772,6 +1803,7 @@ void slda::save_model(const char * filename)
         }
     if (eta_update == 0) { return; }
 
+
     //the label part goes here
     printf("Maximizing ...\n");
     double f = 0.0;
@@ -1779,6 +1811,11 @@ void slda::save_model(const char * filename)
     int opt_iter;
 
     // the total length of all the eta parameters
+    gsl_rng * rng = gsl_rng_alloc(gsl_rng_taus);
+    time_t seed;
+    time(&seed);
+    gsl_rng_set(rng, (long) seed);
+
     int opt_size = 0;
     for (t = 0; t< num_word_types; t++)
         opt_size += num_topics[t];

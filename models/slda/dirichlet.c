@@ -239,7 +239,7 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
      */
     /* Move to args */
     double tol = 1e-7;
-    double maxiter = 1e9;
+    double maxiter = 100;
 
     // logp = log(D).mean(axis=0)
     gsl_vector *logp = log_col_mean(D);
@@ -285,7 +285,7 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
      */
     /* Move to args */
     double tol = 1e-7;
-    double maxiter = 1e9;
+    double maxiter = 100;
 
     // logp = log(D).mean(axis=0)
     gsl_vector *logp = log_col_mean_s(D, w, weight);

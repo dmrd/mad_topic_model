@@ -44,6 +44,13 @@ typedef struct {
     int * tot_labels;
 } suffstats;
 
+// stores digamma values which are costly to compute
+typedef struct 
+{
+ vector<double> digamma_vec;
+ double digamma_sum;
+} digammas;
+
 
 typedef struct {
     double * alpha_1; // the parameter for the dirichlet, indexed by word type
@@ -95,12 +102,13 @@ public:
     double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t, int a);
     double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
-    double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
+    double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma, int d);
 
     void save_gamma(char* filename, double*** gamma, int num_docs);
     void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);
     void init_global_as(double epsilon2);
+    void init_dg(int num_docs);
 
     //void updatePrior();
 
@@ -146,6 +154,7 @@ public:
     // indexed first by class type, then by word type, then by word
     alphas *** as;
     alphas ** as_global;
+    digammas *** dg;
 };
 
 #endif // SLDA_H

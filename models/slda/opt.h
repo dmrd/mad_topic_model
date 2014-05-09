@@ -23,6 +23,7 @@
 #include <gsl/gsl_vector.h>
 #include "slda.h"
 #include <vector>
+#include <gsl/gsl_rng.h>
 using namespace std;
 
 /*
@@ -65,6 +66,10 @@ struct stoch_opt_parameter
 	std::vector<suffstats *> ss;
 	std::vector<int> stoch_authors;
 	std::vector<int> stoch_docs;
+
+	gsl_rng * rng;
+	int author_trials ;
+    int doc_trials;
 
 	std::vector<double> author_prob;
 	std::vector<double> doc_prob;
