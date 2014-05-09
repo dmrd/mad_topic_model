@@ -7,9 +7,9 @@ import logging
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
-CSV_FILENAMES = {"quora" : "data/quora.csv"}
+CSV_FILENAMES = {"nweekly" : "data/nweekly.csv"}
 OUTPUT_FOLDER_NAME = "slda_input_files/"
-NGRAM_PARSERS = ['pos','etymology','word','word_count','syllable','syllable_count','meter']
+NGRAM_PARSERS = ['pos',"""'etymology',"""'word','word_count','syllable','syllable_count','meter']
 N_VALUES = [2, 3, 4]
 
 
