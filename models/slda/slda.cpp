@@ -25,14 +25,15 @@
 #include "utils.h"
 #include "assert.h"
 #include "opt.h"
+#include "dirichlet.h"
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-//# "fitDirichlet"
 
 #include <vector>
-using namespace std;
+//using namespace std;
+
 
 const int NUM_INIT = 50;
 const int LAG = 10;
@@ -128,6 +129,7 @@ void slda::init(double epsilon2, int * num_topics_,
     size_vocab = c->size_vocab;
     num_classes = c->num_classes;
 
+
     init_alpha(epsilon2);
     init_global_as(epsilon2);
 
@@ -135,18 +137,18 @@ void slda::init(double epsilon2, int * num_topics_,
     for (int t = 0; t < num_word_types; t++)
     {
 
-        log_prob_w.push_back(vector<vector<double > >());
-        eta.push_back(vector<vector<double > >());
+        log_prob_w.push_back(std::vector<std::vector<double > >());
+        eta.push_back(std::vector<std::vector<double > >());
 
         // go through each topic for a word type
         for (int k = 0; k < num_topics[t]; k++)
         {
-            log_prob_w[t].push_back(vector<double>(size_vocab[t], 0));
+            log_prob_w[t].push_back(std::vector<double>(size_vocab[t], 0));
         }
 
         for (int i = 0; i < num_classes-1; i++)
         {
-            eta[t].push_back(vector<double>(num_topics[t], 0));
+            eta[t].push_back(std::vector<double>(num_topics[t], 0));
         }
     }
 }
@@ -194,7 +196,7 @@ suffstats * slda::new_suffstats(int t)
 {
     suffstats * ss = new suffstats;
 
-    vector<double>::iterator it;
+    std::vector<double>::iterator it;
     it = ss->word_total_ss.begin();
     for (int i = 0; i < num_topics[t]; i++)
         ss->word_total_ss.push_back(0);
@@ -206,7 +208,7 @@ suffstats * slda::new_suffstats(int t)
     {
         //ss->word_ss[k] = new double [size_vocab[t]];
         //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
-        ss->word_ss.push_back(vector<double>(size_vocab[t],0));
+        ss->word_ss.push_back(std::vector<double>(size_vocab[t],0));
     }
 
     int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
@@ -325,40 +327,88 @@ void slda::random_initialize_ss(suffstats * ss, corpus* c, int t)
 /**
    Optimizes Per Author Dirichlet Prior
  **/
-void slda::updatePrior(double *** var_gamma)
+void slda::updatePrior(double *** var_gamma, bool isSmoothed, double smoothWeight)
 {
     for (int t = 0; t < num_word_types; t++)
     {
+        // used for smoothing
+        gsl_vector * w;
+        if (isSmoothed)
+        {
+            w = gsl_vector_alloc(num_topics[t]);
+            for (int k = 0; k < num_topics[t]; k++)
+                gsl_vector_set(w, k, 1/((double)(num_topics[t])));
+        }
+
         for (int a = 0; a < num_classes; a++ )
         {
+            //
             gsl_matrix * mat = gsl_matrix_alloc(docs_per[a],num_topics[t]);
+            gsl_vector * v;
 
             for (int d = 0; d < docs_per[a]; d++)
             {
                 int dd = getDoc(a,d);
                 for (int k = 0; k < num_topics[t]; k++)
                     gsl_matrix_set(mat, d, k, var_gamma[dd][t][k]);
-                fitDirichlet(mat);
             }
+            if(!isSmoothed)
+                v = dirichlet_mle(mat);
+
+            else
+                v = dirichlet_mle_s(mat, w, smoothWeight);
+
+            // fill in values
+            double sum  = 0;
+            for (int k = 0; k < num_topics[t]; k++)
+            {
+                as[t][a]->alpha_t[k] = gsl_vector_get (v, k);
+                sum += as[t][a]->alpha_t[k];
+            }
+            as[t][a]->alpha_sum_t = sum;
         }
     }
 }
 
-void slda::fitDirichlet(gsl_matrix * mat)
-{
-    return;
-}
 
-void slda::globalPrior(double *** var_gamma)
+void slda::globalPrior(double *** var_gamma, bool isSmoothed, double smoothWeight)
 {
     for (int t = 0; t < num_word_types; t++)
+    {
+       
+       //compute sufficient statistics
+        gsl_vector *v;
+        gsl_matrix * mat = gsl_matrix_alloc(num_docs,num_topics[t]);
+
+        // fill in sufficient statistics
         for (int d = 0; d < num_docs; d++ )
         {
-            gsl_matrix * mat = gsl_matrix_alloc(num_docs,num_topics[t]);
             for (int k = 0; k < num_topics[t]; k++)
                 gsl_matrix_set(mat, d,k, var_gamma[t][d][k]);
-            fitDirichlet(mat);
         }
+
+        //non smoothed dirichlet
+        if (!isSmoothed)
+            v = dirichlet_mle(mat);
+
+        //smoothed dirichlet
+        else
+        {
+            gsl_vector *w = gsl_vector_alloc(num_topics[t]);
+            for (int k = 0; k < num_topics[t]; k++)
+                gsl_vector_set(w, k, 1/((double)(num_topics[t])));
+            v = dirichlet_mle_s(mat, w, smoothWeight);
+        }
+
+        // fill in values 
+        double sum  = 0;
+        for (int k = 0; k < num_topics[t]; k++)
+        {
+            as_global[t]->alpha_t[k] = gsl_vector_get(v, k);
+            sum += as_global[t]->alpha_t[k];
+        }
+        as_global[t]->alpha_sum_t = sum;
+    }
 }
 
 void slda::v_em(corpus * c, const settings * setting,
@@ -428,7 +478,7 @@ void slda::v_em(corpus * c, const settings * setting,
 
     i = 0;
     // CHECK THIS LATER
-    while (((converged < 0) || (converged > setting->EM_CONVERGED) || (i <= LDA_INIT_MAX+2)) && (i <= setting->EM_MAX_ITER))
+    while (((converged < 0) || (converged > setting->EM_CONVERGED || i <= setting->EM_MAX_ITER) || (i <= LDA_INIT_MAX+2)) && (i <= setting->EM_MAX_ITER))
     {
         printf("**** em iteration %d ****\n", ++i);
         likelihood = 0;
@@ -451,7 +501,8 @@ void slda::v_em(corpus * c, const settings * setting,
             }
         }
 
-        updatePrior(var_gamma);
+        //if (i > 100)
+        //    updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
 
         printf("likelihood: %10.10f\n", likelihood);
         // m-st
@@ -480,6 +531,8 @@ void slda::v_em(corpus * c, const settings * setting,
     }
 
 
+    //updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+    //this->SMOOTH_WEIGHTglobalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
 
     // output the final model
     sprintf(filename, "%s/final.model", directory);
@@ -506,6 +559,7 @@ void slda::v_em(corpus * c, const settings * setting,
         write_word_assignment(w_asgn_file, c->docs[d], phi);
 
     }
+
     fclose(w_asgn_file);
 
     for (d = 0; d < c->num_docs; d++)
@@ -547,7 +601,7 @@ int slda::vec_index(int t, int l, int k)
     return output;
 }
 
-void slda::mle(vector<suffstats *> ss, int eta_update, const settings * setting)
+void slda::mle(std::vector<suffstats *> ss, int eta_update, const settings * setting)
 {
     int k, w, t;
 
@@ -1355,12 +1409,12 @@ double slda::lda_inference(document* doc, double* var_gamma, double** phi,
     if (a == -1)
         lda_alphas = as_global[t];
     else
-        lda_alphas = as[a][t];
+        lda_alphas = as[t][a];
 
     if (a == -1)
         alphas * lda_alphas = as_global[t];
     else
-        alphas * lda_alphas = as[a][t];
+        alphas * lda_alphas = as[t][a];
 
     // compute posterior dirichlet
     for (k = 0; k < num_topics[t]; k++)
@@ -1424,7 +1478,7 @@ double slda::lda_compute_likelihood(document* doc, double** phi, double* var_gam
     if (a == -1)
         lda_alphas = as_global[t];
     else
-        lda_alphas = as[a][t];
+        lda_alphas = as[t][a];
 
     double alpha_sum = lda_alphas->alpha_sum_t;
 
@@ -1553,10 +1607,10 @@ void slda::load_model(const char * filename)
         fread(&num_topics[t], sizeof (int), 1, file);
         fread(&size_vocab[t], sizeof (int), 1, file);
 
-        log_prob_w.push_back(vector<vector<double > >());
+        log_prob_w.push_back(std::vector<std::vector<double > >());
         for (int k = 0; k < num_topics[t]; k++)
         {
-            log_prob_w[t].push_back(vector<double >(size_vocab[t], 0));
+            log_prob_w[t].push_back(std::vector<double >(size_vocab[t], 0));
             for (int w = 0; w < size_vocab[t]; w++)
                 fread(&log_prob_w[t][k][w], sizeof(double), 1, file);
         }
@@ -1584,10 +1638,10 @@ void slda::load_model(const char * filename)
         }
         if (num_classes > 1)
         {
-            eta.push_back(vector<vector<double > >());
+            eta.push_back(std::vector<std::vector<double > >());
             for (int i = 0; i < num_classes-1; i++)
             {
-                eta[t].push_back(vector<double>(num_topics[t], 0));
+                eta[t].push_back(std::vector<double>(num_topics[t], 0));
                 for (int k = 0; k < num_topics[t]; k++)
                     fread(&eta[t][i][k], sizeof(double), 1, file);
             }

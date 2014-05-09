@@ -67,8 +67,8 @@ public:
     void init(double epsilon2, int * num_topics_, const corpus * c);
     void v_em(corpus * c, const settings * setting,
               const char * start, const char * directory);
-    void updatePrior(double *** var_gamma);
-    void globalPrior(double *** var_gamma);
+    void updatePrior(double *** var_gamma, bool is_smoothed, double weight);
+    void globalPrior(double *** var_gamma, bool is_smoothed, double weight);
     void fitDirichlet(gsl_matrix * mat);
 
 
@@ -102,7 +102,7 @@ public:
     void init_alpha(double epsilon2);
     void init_global_as(double epsilon2);
 
-    void updatePrior();
+    //void updatePrior();
 
     int vec_index(int t, int l, int k);
     //int vec_index2(int t, int l, int k, vector<int> stoch_authors);
@@ -122,7 +122,7 @@ public:
     **/
 public:
 
-    double * scaling; // scales prior to match author prolificness
+    //double * scaling; // scales prior to match author prolificness
 
     int num_docs; /* number of documents*/
     int * docs_per; // # documents per author, indexed by author
