@@ -195,6 +195,37 @@ double loglikelihood(gsl_matrix *D, gsl_vector *a) {
 
 }
 
+double loglikelihood_s(gsl_matrix *D, gsl_vector *a, gsl_vector * w, double weight) {
+    /*
+     * D: N x K matrix
+     *    N is number of observations
+     *    K is number of Dirichlet parameters
+     * a: K parameters of dirichlet distribution
+     */
+    // logp = log(D).mean(axis=0)
+    gsl_vector *logp = log_col_mean_s(D, w, weight);
+
+    // gammaln(a.sum())
+    double gamma_sum = gsl_sf_lngamma(vec_sum(a));
+
+    // gammaln(a).sum()
+    double sum_of_gamma = 0;
+    for (size_t i = 0; i < a->size; i++) {
+        sum_of_gamma += gsl_sf_lngamma(a->data[i]);
+    }
+
+    // ((a-1) * logp).sum()
+    double m1_logp = 0;
+    for (size_t i = 0; i < a->size; i++) {
+        m1_logp += (a->data[i] - 1) * logp->data[i];
+    }
+    gsl_vector_free(logp);
+
+    // return N*(gammaln(a.sum()) - gammaln(a).sum() + ((a - 1)*logp).sum())
+    return D->size1 * (gamma_sum - sum_of_gamma + m1_logp);
+
+}
+
 
 gsl_vector *dirichlet_mle(gsl_matrix *D) {
     /*
@@ -262,7 +293,7 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
     // a0 = _init_a(D)
     gsl_vector *a0 = _init_a_s(D, w, weight);
 
-    double last_ll = loglikelihood(D, a0);
+    double last_ll = loglikelihood_s(D, a0, w, weight);
 
     for (int iter = 0; iter < maxiter; iter++) {
         // a1 = _ipsi(psi(a0.sum()) + logp)
@@ -277,7 +308,7 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
         //     return a1
         // a0 = a1
         gsl_vector_free(a0);
-        double this_ll = loglikelihood(D, a1);
+        double this_ll = loglikelihood_s(D, a1, w, weight);
         if (fabs(this_ll - last_ll) < tol) {
             return a1;
         }
