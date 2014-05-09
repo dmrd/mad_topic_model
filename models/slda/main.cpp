@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
         c->findDocsPer();
 
         slda model;
-        //model.load_model(model_filename);
+        model.load_model(model_filename);
         model.infer_only(c, &setting, directory);
     }
 

@@ -941,14 +941,16 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
     // allocate variational parameters
     var_gamma = new double ** [c->num_docs];
-    for (t = 0; t < num_word_types; t++)
-        var_gamma[t] = new double * [num_word_types];
+    for (d = 0; d < c->num_docs; d++)
+        var_gamma[d] = new double * [num_word_types];
 
     phi = new double ** [num_word_types];
     phi_m = new double * [num_word_types];
 
     for (t = 0; t < num_word_types; t++)
     {
+        std::cout << "t:" << t << "\n";
+        std::cout << "num_topics[t]:" << num_topics[t] << "\n";
         phi_m[t] = new double [num_topics[t]];
 
         phi[t] = new double * [max_length[t]];
@@ -1364,6 +1366,9 @@ double slda::lda_inference(document* doc, double* var_gamma, double** phi,
     for (k = 0; k < num_topics[t]; k++)
     {
         // change later to use a local version
+        std::cout << "alpha_t[k]: " << lda_alphas->alpha_t[k] << "\n";
+        std::cout << "doc->total[t]: " << doc->total[t] << "\n";
+        std::cout << "num_topics[t]" << num_topics[t] << "\n";
         var_gamma[k] = lda_alphas->alpha_t[k] + (doc->total[t]/((double) num_topics[t]));
         digamma_gam[k] = digamma(var_gamma[k]);
         for (n = 0; n < doc->length[t]; n++)
@@ -1525,6 +1530,7 @@ void slda::corpus_initialize_ss(suffstats* ss, corpus* c, int t)
 void slda::load_model(const char * filename)
 {
     FILE * file = NULL;
+    std::cout << "READING MODEL FROM " << filename << "\n";
     file = fopen(filename, "rb");
     //fwrite(&epsilon, sizeof (double), 1, file);
     //fwrite(&num_topics[t], sizeof (int), 1, file);
@@ -1533,35 +1539,55 @@ void slda::load_model(const char * filename)
     fread(&num_classes, sizeof (int), 1, file);
     fread(&num_word_types, sizeof (int), 1, file);
 
-    int * num_topics = new int[num_word_types];
-    int * size_vocab = new int[num_word_types];
+    num_topics = new int[num_word_types];
+    size_vocab = new int[num_word_types];
 
     // double *** log_prob_w =  new double ** [num_word_types];
-    alphas *** as =  new alphas ** [num_word_types];
-    alphas ** as_global =  new alphas * [num_word_types];
+    as =  new alphas ** [num_word_types];
+    as_global =  new alphas * [num_word_types];
 
 
+    fread(&epsilon, sizeof (double), 1, file);
     for (int t = 0; t < num_word_types; t++)
     {
-        fread(&epsilon, sizeof (double), 1, file);
         fread(&num_topics[t], sizeof (int), 1, file);
         fread(&size_vocab[t], sizeof (int), 1, file);
 
+        log_prob_w.push_back(vector<vector<double > >());
         for (int k = 0; k < num_topics[t]; k++)
         {
+            log_prob_w[t].push_back(vector<double >(size_vocab[t], 0));
             for (int w = 0; w < size_vocab[t]; w++)
                 fread(&log_prob_w[t][k][w], sizeof(double), 1, file);
         }
 
-        fread(&as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
+        as_global[t] = new alphas;
+        as_global[t]->alpha_t = new double [num_topics[t]];
+        fread(as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
+        as_global[t]->alpha_sum_t = 0;
+        for (int i = 0; i < num_topics[t]; i++)
+        {
+            as_global[t]->alpha_sum_t += as_global[t]->alpha_t[i];
+        }
+
+        as[t] = new alphas *  [num_classes];
         for (int a = 0; a < num_classes; a++)
         {
-            fread(&as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
+            as[t][a] = new alphas;
+            as[t][a]->alpha_t = new double [num_topics[t]];
+            fread(as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
+            as[t][a]->alpha_sum_t = 0;
+            for (int i = 0; i < num_topics[t]; i++)
+            {
+                as[t][a]->alpha_sum_t += as[t][a]->alpha_t[i];
+            }
         }
         if (num_classes > 1)
         {
+            eta.push_back(vector<vector<double > >());
             for (int i = 0; i < num_classes-1; i++)
             {
+                eta[t].push_back(vector<double>(num_topics[t], 0));
                 for (int k = 0; k < num_topics[t]; k++)
                     fread(&eta[t][i][k], sizeof(double), 1, file);
             }
@@ -1583,9 +1609,9 @@ void slda::save_model(const char * filename)
     fwrite(&num_classes, sizeof (int), 1, file);
     fwrite(&num_word_types,sizeof (int), 1, file);
 
+    fwrite(&epsilon, sizeof (double), 1, file);
     for (int t = 0; t < num_word_types; t++)
     {
-        fwrite(&epsilon, sizeof (double), 1, file);
         fwrite(&num_topics[t], sizeof (int), 1, file);
         fwrite(&size_vocab[t], sizeof (int), 1, file);
 
@@ -1595,10 +1621,10 @@ void slda::save_model(const char * filename)
                 fwrite(&log_prob_w[t][k][w], sizeof(double),1, file);
         }
 
-        fwrite(&as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
+        fwrite(as_global[t]->alpha_t, sizeof(double), num_topics[t], file);
         for (int a = 0; a < num_classes; a++)
         {
-            fwrite(&as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
+            fwrite(as[t][a]->alpha_t, sizeof(double), num_topics[t], file);
         }
         if (num_classes > 1)
         {
@@ -2100,5 +2126,3 @@ void slda::save_model(const char * filename)
     delete [] phi;
    }
  **/
-
-
