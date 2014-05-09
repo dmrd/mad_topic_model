@@ -73,7 +73,7 @@ public:
 
 
     void save_model(const char * filename);
-    void save_model_text(const char * filename, int t);
+    void save_model_text(const char * filename);
     void load_model(const char * filename);
 
 
@@ -87,12 +87,12 @@ public:
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
     void mle( std::vector<suffstats *> ss, int eta_update, const settings * setting);
-
+    void infer_only_2(corpus * c, const settings * setting, const char * directory);
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
 
-    double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t);
-    double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t);
+    double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t, int a);
+    double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t, int a);
     double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
