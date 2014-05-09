@@ -22,6 +22,9 @@
 #include "slda.h"
 #include "utils.h"
 #include <iostream>
+#include <vector>
+using namespace std;
+
 /*
  * Here the implementation is slightly different from the equations
  * in the paper, we instead use a second-order taylor expansion to approximate
@@ -275,3 +278,310 @@ void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector 
     delete [] eta_aux;
     gsl_vector_free(df_tmp);
 }
+
+/**
+double softmax_f_stoch(const gsl_vector * x, void * opt_param)
+{
+    stoch_opt_parameter * gsl_param = (stoch_opt_parameter *)opt_param;
+    double PENALTY = gsl_param->PENALTY;
+    slda * model = gsl_param->model;
+    std::vector<suffstats *> ss = gsl_param->ss;
+
+    std::vector<int> stoch_authors = gsl_param->stoch_authors;
+    std::vector<int> stoch_docs =  gsl_param->stoch_docs;
+
+    std::vector<double> author_prob = gsl_param->author_prob;
+    std::vector<double> doc_prob = gsl_param-> doc_prob;
+
+    double f, t0, a1 = 0.0, a2 = 0.0, dp, lp;
+
+    int k, d, j, l, idx, t, li, di;
+
+    double f_regularization = 0.0;
+
+
+    for (t = 0; t < model->num_word_types; t++)
+    {
+        for (li = 0; li < model->num_classes-1; li++)
+        {
+            l =  stoch_authors[li];
+            ld = author_prob[li];
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                // check this out later
+                
+                model->eta[t][l][k] = gsl_vector_get(x, 
+                    model->vec_index2(t, li, k,stoch_authors.size()));
+                f_regularization -= pow(model->eta[t][l][k], 2) * PENALTY/2.0;
+            }
+        }
+    }
+    f = 0.0; //log likelihood
+    for (di = 0; di < stoch_docs.size(); di++)
+    {
+        d = stoch_docs[di];
+        di = doc_prob[di];
+
+        for (t = 0; t < model->num_word_types; t++) {
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                if (ss[t]->labels[d] < model->num_classes-1)
+                {
+                    f += model->eta[t][ss[t]->labels[d]][k] * ss[t]->z_bar[d].z_bar_m[k];
+                }
+            }
+        }
+
+        t0 = 0.0; // in log space,  1+exp()+exp()...
+        for (li = 0; li < stoch_authors.size(); li++)
+        {
+            l =  stoch_authors[li];
+            ld = author_prob[li];
+
+            a1 = 0.0; // \eta_k^T * \bar{\phi}_d
+            a2 = 0.0; // 1 + 0.5 * \eta_k^T * Var(z_bar)\eta_k
+
+            for (t = 0; t < model->num_word_types; t++)
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                a1 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_m[k];
+
+                for (j = 0; j < model->num_topics[t]; j++)
+                {
+                    // WHAT DOES THIS METHOD DO
+                    idx = map_idx(k, j, model->num_topics[t]);
+                    a2 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_var[idx] * model->eta[t][l][j];
+                }
+            }
+            a2 = 1.0 + 0.5 * a2;
+            t0 = log_sum(t0, a1 + log(a2));
+        }
+        f -= t0;
+    }
+
+    return -(f + f_regularization);
+}
+void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
+{
+
+    stoch_opt_parameter * gsl_param = (stoch_opt_parameter *)opt_param;
+    double PENALTY = gsl_param->PENALTY;
+    slda * model = gsl_param->model;
+    std::vector<suffstats *> ss = gsl_param->ss;
+
+    std::vector<int> stoch_authors = gsl_param->stoch_authors;
+    std::vector<int> stoch_docs =  gsl_param->stoch_docs;
+
+    std::vector<double> author_prob = gsl_param->author_prob;
+    std::vector<double> doc_prob = gsl_param-> doc_prob;
+
+    gsl_vector_set_zero(df);
+    gsl_vector * df_tmp = gsl_vector_alloc(df->size);
+
+    double a1 = 0.0, a2 = 0.0, g,t0, dp,lp;
+    int k, d, j, l, idx, t, li, di,li;
+
+
+    double ** eta_aux = new double * [model->num_word_types];
+
+    for (t = 0; t < model->num_word_types; t++) {
+        eta_aux[t] = new double[model->num_topics[t]];
+    }
+
+
+    for (t = 0; t < model->num_word_types; t++)
+    {
+        for (li = 0; li < stoch_authors.size(); li++)
+        {
+            l =  stoch_authors[li];
+            dp = author_prob[li];
+
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                // scale for stochastic descent!!!
+                idx = model->vec_index2(t,li,k,stoch_authors.size());
+                model->eta[t][l][k] = gsl_vector_get(x, idx);
+                g = -PENALTY * model->eta[t][l][k];
+                gsl_vector_set(df, idx, g);
+            }
+        }
+    }
+
+    for (di = 0; di < stoch_docs.size(); di++)
+    {
+        d = stoch_docs[di];
+        dp = doc_prob[di];
+
+        for (t = 0; t < model->num_word_types; t++) {
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                l = ss[t]->labels[d];
+                 if(std::find(stoch_authors.begin(), stoch_authors.end(), l) != stoch_authors.end()) 
+                {
+                    // REMEMBER TO SCALE
+                    idx = model->vec_index(t,l,k);
+                    g = gsl_vector_get(df, idx) + ss[t]->z_bar[d].z_bar_m[k];
+                    gsl_vector_set(df, idx, g);
+                }
+            }
+        }
+
+
+        t0 = 0.0; // in log space, 1+exp()+exp()+....
+        gsl_vector_memcpy(df_tmp, df);
+        gsl_vector_set_zero(df);
+        for (li = 0; li < stoch_authors.size(); li++)
+        {
+            l = stoch_authors[li];
+            lp = author_prob[li];
+
+            for (t = 0; t < model->num_word_types; t++) {
+                memset(eta_aux[t], 0, sizeof(double)*model->num_topics[t]);
+            }
+
+            a1 = 0.0; // \eta_k^T * \bar{\phi}_d
+            a2 = 0.0; // 1 + 0.5*\eta_k^T * Var(z_bar)\eta_k
+            for (t = 0; t < model->num_word_types; t++) {
+                for (k = 0; k < model->num_topics[t]; k++)
+                {
+                    // DEAL WITH SCALING
+                    a1 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_m[k];
+                    for (j = 0; j < model->num_topics[t]; j++)
+                    {
+                        // DEAL WITH SCALING
+                        idx = map_idx(k, j, model->num_topics[t]);
+                        a2 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_var[idx] * model->eta[t][l][j];
+                        eta_aux[t][k] += ss[t]->z_bar[d].z_bar_var[idx] * model->eta[t][l][j];
+                    }
+                }
+            }
+            a2 = 1.0 + 0.5 * a2;
+            t0 = log_sum(t0, a1 + log(a2));
+
+            for (t = 0; t < model->num_word_types; t++) {
+                for (k = 0; k < model->num_topics[t]; k++)
+                {
+                    //DO SCALING
+                    idx = model->vec_index2(t, li, k, stoch_authors.size());
+                    g =  gsl_vector_get(df, idx) -
+                        exp(a1) * (ss[t]->z_bar[d].z_bar_m[k] * a2 + eta_aux[t][k]);
+                    gsl_vector_set(df, idx, g);
+                }
+            }
+        }
+        gsl_vector_scale(df, exp(-t0));
+        gsl_vector_add(df, df_tmp);
+    }
+    gsl_vector_scale(df, -1.0);
+    delete [] eta_aux;
+    gsl_vector_free(df_tmp);
+}
+
+void softmax_fdf_stoch(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df)
+{
+    stoch_opt_parameter * gsl_param = (stoch_opt_parameter *)opt_param;
+    double PENALTY = gsl_param->PENALTY;
+    slda * model = gsl_param->model;
+    std::vector<suffstats *> ss = gsl_param->ss;
+    gsl_vector_set_zero(df);
+    gsl_vector * df_tmp = gsl_vector_alloc(df->size);
+
+
+    std::vector<int> stoch_authors = gsl_param->stoch_authors;
+    std::vector<int> stoch_docs =  gsl_param->stoch_docs;
+
+    std::vector<double> author_prob = gsl_param->author_prob;
+    std::vector<double> doc_prob = gsl_param-> doc_prob;
+
+    double t0, a1 = 0.0, a2 = 0.0, g, dp, lp;
+    int k, d, j, l, idx, t, di, li;
+
+    double f_regularization = 0.0;
+
+    double ** eta_aux = new double * [model->num_word_types];
+    for (t = 0; t < model->num_word_types; t++) {
+        eta_aux[t] = new double[model->num_topics[t]];
+    }
+
+    for (li = 0; li < stoch_authors.size(); li++)
+    {
+        for (t = 0; t < model->num_word_types; t++)
+        for (k = 0; k < model->num_topics[t]; k++)
+        {
+            //DO SCALING
+            model->eta[t][l][k] = gsl_vector_get(x, model->vec_index2(t, li, k, stoch_authors.size()));
+            f_regularization -= pow(model->eta[t][l][k], 2) * PENALTY/2.0;
+            idx = model->vec_index(t, l, k);
+            g = -PENALTY * model->eta[t][l][k];
+            gsl_vector_set(df, idx, g);
+        }
+    }
+    *f = 0.0; //log likelihood
+    for (di = 0; di < stoch_docs.size(); di++)
+    {
+        d = stoch_docs[di];
+        d = doc_prob[di];
+
+        for (t = 0; t < model->num_word_types; t++)
+        for (k = 0; k < model->num_topics[t]; k++)
+        {
+            l = ss[t]->labels[d];
+            if(std::find(stoch_authors.begin(), stoch_authors.end(), l) != stoch_authors.end()) 
+            {
+                //DO SCALING
+                *f += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_m[k];
+                idx = model->vec_index(t, l, k);
+                g = gsl_vector_get(df, idx) + ss[t]->z_bar[d].z_bar_m[k];
+                gsl_vector_set(df, idx, g);
+            }
+        }
+        t0 = 0.0; // in log space,  base class 1+exp()+exp()
+        gsl_vector_memcpy(df_tmp, df);
+        gsl_vector_set_zero(df);
+        for (l = 0; l < model->num_classes-1; l++)
+        {
+            for (t = 0; t < model->num_word_types; t++) {
+                memset(eta_aux[t], 0, sizeof(double)*model->num_topics[t]);
+        }
+
+            a1 = 0.0; // \eta_k^T * \bar{\phi}_d
+            a2 = 0.0; // 1 + 0.5 * \eta_k^T * Var(z_bar)\eta_k
+
+            // DO SCALING
+            for (t = 0; t < model->num_word_types; t++) {
+                for (k = 0; k < model->num_topics[t]; k++)
+                {
+                    a1 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_m[k];
+
+                    for (j = 0; j < model->num_topics[t]; j++)
+                    {
+                        idx = map_idx(k, j, model->num_topics[t]);
+                        a2 += model->eta[t][l][k] * ss[t]->z_bar[d].z_bar_var[idx] * model->eta[t][l][j];
+                        eta_aux[t][k] += ss[t]->z_bar[d].z_bar_var[idx] * model->eta[t][l][j];
+                    }
+                }
+            }
+            a2 = 1.0 + 0.5 * a2;
+            t0 = log_sum(t, a1 + log(a2));
+
+            for (t = 0; t < model->num_word_types; t++)
+            for (k = 0; k < model->num_topics[t]; k++)
+            {
+                idx = model->vec_index(t, l, k);
+                g =  gsl_vector_get(df, idx) -
+                     exp(a1) * (ss[t]->z_bar[d].z_bar_m[k] * a2 + eta_aux[t][k]);
+                gsl_vector_set(df, idx, g);
+            }
+        }
+        gsl_vector_scale(df, exp(-t0));
+        gsl_vector_add(df, df_tmp);
+        *f -= t0;
+    }
+    gsl_vector_scale(df, -1.0);
+    *f = -(*f + f_regularization);
+    delete [] eta_aux;
+    gsl_vector_free(df_tmp);
+}
+
+**/
+
