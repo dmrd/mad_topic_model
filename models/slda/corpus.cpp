@@ -29,7 +29,7 @@
 
 // constructs a document with wt wordtypes
 // and length array len
-document::document(int* len, int  wt)
+document::document(int* len, int wt)
 {
     init(len,wt);
 }
@@ -59,39 +59,39 @@ void document::set_length(int t, int len)
 // helper method for construction
 void document::init(int * len, int wt)
 {
-        length = len;
-        wordTypes  = wt;
+    length = len;
+    wordTypes  = wt;
 
-        words = new int *  [wordTypes];
-        counts = new int * [wordTypes];
+    words = new int *  [wordTypes];
+    counts = new int * [wordTypes];
 
-        for (int t = 0; t < wordTypes; t++)
-        {
-            words[t] = new int [length[t]];
-            counts[t] = new int [length[t]];
-        }
+    for (int t = 0; t < wordTypes; t++)
+    {
+        words[t] = new int [length[t]];
+        counts[t] = new int [length[t]];
+    }
 
-        total = new int[wordTypes];
-        label = -1;
+    total = new int[wordTypes];
+    label = -1;
 }
 
 document::~document()
+{
+    if (words != NULL)
     {
-        if (words != NULL)
+        for (int t = 0; t < wordTypes; t++)
         {
-            for (int t = 0; t < wordTypes; t++)
-            {
-                delete [] words[t];
-                delete [] counts[t];
-            }
-            delete [] words;
-            delete [] counts;
-
-            delete[] length;
-            delete [] total;
-            label = -1;
+            delete [] words[t];
+            delete [] counts[t];
         }
+        delete [] words;
+        delete [] counts;
+
+        delete[] length;
+        delete [] total;
+        label = -1;
     }
+}
 
 document::document()
 {
@@ -120,7 +120,7 @@ corpus::corpus(int T)
     size_vocab = new int [num_word_types];
     num_classes = 0;
     num_total_words = new int [num_word_types];
-    for (int t = 0; t < T; t ++)
+    for (int t = 0; t < T; t++)
         num_total_words[t] = 0;
 
 
@@ -129,7 +129,7 @@ corpus::corpus(int T)
 
 corpus::~corpus()
 {
-    for (int i = 0; i < num_docs; i ++)
+    for (int i = 0; i < num_docs; i++)
     {
         document * doc = docs[i];
         delete doc;
@@ -163,7 +163,7 @@ void corpus::read_data(const char * data_filename0,
 
     FILE * fileptr;
 
-    for (t = 0; t < num_word_types; t ++)
+    for (t = 0; t < num_word_types; t++)
     {
         nd = 0;
         nw[t] = 0;
@@ -175,9 +175,12 @@ void corpus::read_data(const char * data_filename0,
         {
             document * doc;
 
-            if (t == 0) {
+            if (t == 0)
+            {
                 doc = new document(num_word_types);
-            } else {
+            }
+            else
+            {
                 doc = docs[nd];
             }
 
@@ -197,7 +200,8 @@ void corpus::read_data(const char * data_filename0,
             }
             num_total_words[t] += doc->total[t];
             // Only count documents once
-            if (t == 0) {
+            if (t == 0)
+            {
                 docs.push_back(doc);
             }
             nd++;
@@ -233,13 +237,15 @@ void corpus::read_data(const char * data_filename0,
     printf("number of classes : %d\n\n", num_classes);
 }
 
-int * corpus::max_corpus_length() {
+int * corpus::max_corpus_length()
+{
     int * max_length = new int [num_word_types];
     for (int t = 0; t < num_word_types; t++)
         max_length[t] =0;
 
-    for (int d = 0; d < num_docs; d++) {
-         for (int t = 0; t < num_word_types; t++)
+    for (int d = 0; d < num_docs; d++)
+    {
+        for (int t = 0; t < num_word_types; t++)
         {
             if (docs[d]->length[t] > max_length[t])
                 max_length[t] = docs[d]->length[t];

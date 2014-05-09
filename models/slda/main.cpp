@@ -25,7 +25,8 @@
 #include "utils.h"
 #include "slda.h"
 
-void help( void ) {
+void help( void )
+{
     printf("usage: slda [est] [data] [label] [settings] [alpha] [k] [random/seeded/model_path] [directory]\n");
     printf("       slda [inf] [data] [label] [settings] [model] [directory]\n");
 }
@@ -59,7 +60,7 @@ int main(int argc, char* argv[])
         make_directory(directory);
 
         // initialize this
-        for (int t = 0; t < num_word_types;t++)
+        for (int t = 0; t < num_word_types; t++)
         {
             num_topics[t] = atoi(argv[9+t]);
             printf("number of topics is %i for t = %i\n", num_topics[t],t);
@@ -70,7 +71,7 @@ int main(int argc, char* argv[])
         c->findDocsPer();
 
         slda model;
-        model.init(alpha, num_topics , c);
+        model.init(alpha, num_topics, c);
         model.v_em(c, &setting, init_method, directory);
     }
 
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
         c->findDocsPer();
 
         slda model;
-        //model.load_model(model_filename);
+        model.load_model(model_filename);
         model.infer_only(c, &setting, directory);
     }
 

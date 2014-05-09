@@ -22,6 +22,8 @@
 #define OPT_H_INCLUDED
 #include <gsl/gsl_vector.h>
 #include "slda.h"
+#include <vector>
+using namespace std;
 
 /*
  * structure for the gsl optimization routine
@@ -55,6 +57,27 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df);
  */
 
 void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
+
+
+/**
+struct stoch_opt_parameter
+{
+	std::vector<suffstats *> ss;
+	std::vector<int> stoch_authors;
+	std::vector<int> stoch_docs;
+
+	std::vector<double> author_prob;
+	std::vector<double> doc_prob;
+
+	slda * model;
+	double PENALTY;
+};
+
+//function to compute softmax objective using stochastic sampling
+double softmax_f_stoch(const gsl_vector *, void * opt_param, double * f, gsl_vector * df );
+void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df);
+void softmax_fdf_stoch(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
+**/
 
 #endif // OPT_H_INCLUDED
 
