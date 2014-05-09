@@ -30,6 +30,7 @@ def generate_documents(n_authors, n_topics, n_docs, n_words,
     for _ in range(n_authors):
         x = np.random.rand(n_topics)
         author_p.append(x)
+        print(x / x.sum())
 
     # Generate topic multinomial distributions over words
     # (drawn from dirichlet)

@@ -62,6 +62,7 @@ struct settings
          // values hardwired
         this->SMOOTH_WEIGHT = 1;
         this->EM_MIN_ITER = 10;
+        this->IS_SMOOTHED = 0;
 
 
         if (strcmp(alpha_action, "fixed") == 0)
@@ -90,7 +91,7 @@ struct settings
         {
             printf("No Dirichlet Smoothing\n");
         }
-        
+
     }
 };
 

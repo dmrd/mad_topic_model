@@ -399,7 +399,7 @@ void slda::globalPrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
 {
     for (int t = 0; t < num_word_types; t++)
     {
-       
+
        //compute sufficient statistics
         gsl_vector *v;
         gsl_matrix * mat = gsl_matrix_alloc(num_docs,num_topics[t]);
@@ -424,7 +424,7 @@ void slda::globalPrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
             v = dirichlet_mle_s(mat, w, smoothWeight);
         }
 
-        // fill in values 
+        // fill in values
         double sum  = 0;
         for (int k = 0; k < num_topics[t]; k++)
         {
@@ -527,7 +527,7 @@ void slda::v_em(corpus * c, const settings * setting,
 
         if (i % 5 == 0)
         {
-            cout << "calling update prior";
+            cout << "calling update prior\n";
             updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
         }
         printf("likelihood: %10.10f\n", likelihood);
@@ -771,7 +771,7 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
 }
 
 
-double slda::slda_compute_likelihood(document* doc, double*** phi, 
+double slda::slda_compute_likelihood(document* doc, double*** phi,
     double** var_gamma, int d)
 {
     double likelihood = 0, var_gamma_sum = 0, t0 = 0.0, t1 = 0.0, t2 = 0.0;
@@ -887,7 +887,7 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
             digamma_gam[t][k] = digamma(var_gamma[t][k]);
             for (n = 0; n < doc->length[t]; n++)
                 phi[t][n][k] = 1.0/(double)(num_topics[t]);
-            
+
         }
     }
 

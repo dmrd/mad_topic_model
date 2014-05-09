@@ -14,6 +14,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+double vec_sum(gsl_vector *v) {
+    /* Returns vector sum */
+    return v->size * gsl_stats_mean(v->data, v->stride, v->size);
+}
+
 void vec_print(gsl_vector *v) {
     for (size_t i = 0; i < v->size; i++) {
         printf("%f\t", v->data[i]);
@@ -118,6 +123,7 @@ gsl_vector *_init_a(gsl_matrix *D) {
     double scale = (E->data[0] - E2->data[0]) / (E2->data[0] - gsl_pow_2(E->data[0]));
     gsl_vector_scale(E, scale);
     gsl_vector_free(E2);
+
     return E;
 }
 
@@ -157,11 +163,6 @@ gsl_vector *log_col_mean_s(gsl_matrix *D, gsl_vector * w, double weight) {
     gsl_vector *logm = mat_col_mean_s(m,log_w, weight);
     gsl_matrix_free(m);
     return logm;
-}
-
-double vec_sum(gsl_vector *v) {
-    /* Returns vector sum */
-    return v->size * gsl_stats_mean(v->data, v->stride, v->size);
 }
 
 double loglikelihood(gsl_matrix *D, gsl_vector *a) {
@@ -240,14 +241,19 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
     /* Move to args */
     double tol = 1e-7;
     double maxiter = 100;
+    double lambda = 0.01;
 
     // logp = log(D).mean(axis=0)
     gsl_vector *logp = log_col_mean(D);
 
     // a0 = _init_a(D)
-    gsl_vector *a0 = _init_a(D);
+    /* gsl_vector *a0 = _init_a(D); */
+    // Just always start search at 1
+    gsl_vector *a0 = gsl_vector_alloc(D->size2);
+    gsl_vector_set_all(a0, 1.0);
 
     double last_ll = loglikelihood(D, a0);
+
 
     for (int iter = 0; iter < maxiter; iter++) {
         // a1 = _ipsi(psi(a0.sum()) + logp)
@@ -256,6 +262,14 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
         gsl_vector_add_constant(scaled_logp, gsl_sf_psi(vec_sum(a0)));
 
         gsl_vector *a1 = vec_elementwise_func(scaled_logp, _ipsi);
+
+        /* Regularization */
+        /* gsl_vector *a1_scaled = gsl_vector_alloc(a1->size); */
+        /* gsl_vector_memcpy(a1_scaled, a1); */
+        /* gsl_vector_scale(a1_scaled, lambda); */
+        /* gsl_vector_sub(a1, a1_scaled); */
+
+        /* gsl_vector_free(a1_scaled); */
         gsl_vector_free(scaled_logp);
 
         // if abs(loglikelihood(D, a1)-loglikelihood(D, a0)) < tol:
@@ -286,12 +300,15 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
     /* Move to args */
     double tol = 1e-7;
     double maxiter = 100;
+    double lambda = 0.1;
 
     // logp = log(D).mean(axis=0)
     gsl_vector *logp = log_col_mean_s(D, w, weight);
 
     // a0 = _init_a(D)
-    gsl_vector *a0 = _init_a_s(D, w, weight);
+    /* gsl_vector *a0 = _init_a_s(D, w, weight); */
+    gsl_vector *a0 = gsl_vector_alloc(D->size2);
+    gsl_vector_set_all(a0, 1.0);
 
     double last_ll = loglikelihood_s(D, a0, w, weight);
 
@@ -302,6 +319,7 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
         gsl_vector_add_constant(scaled_logp, gsl_sf_psi(vec_sum(a0)));
 
         gsl_vector *a1 = vec_elementwise_func(scaled_logp, _ipsi);
+
         gsl_vector_free(scaled_logp);
 
         // if abs(loglikelihood(D, a1)-loglikelihood(D, a0)) < tol:
