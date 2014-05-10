@@ -1,10 +1,16 @@
 Hello Gentlemen. We did. Here is how to run the SLDA CODE.
 
+Current Problems and Notes:
+1. Reading in settings is weird. Need to hard wire some settings
+2. Dirichlet MLE has underflow. Calls to update alpha prior commented out
+3. Changed convergence to have a "min iterations" setting to ensure robustness
+4. When editting settings.h, one has to make clean, then make
+
 Here is the usage:
 
 option 1: slda [est] [word_types] [data] [label] [settings] [alpha] [random/seeded/model_path] [directory] [topic#1] [topic #2] ...
 
-option 2:   slda [inf] [word_types]  [data] [label] [settings] [model] [directory];
+option 2:  slda [inf] [word_types]  [data] [label] [settings] [model] [directory];
  
 [est] indicates that we will be doing parameter estimation 
 [inf] indicates that we are inferening topics after doing parameter estimation 

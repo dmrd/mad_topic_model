@@ -44,6 +44,13 @@ typedef struct {
     int * tot_labels;
 } suffstats;
 
+// stores digamma values which are costly to compute
+typedef struct 
+{
+ vector<double> digamma_vec;
+ double digamma_sum;
+} digammas;
+
 
 typedef struct {
     double * alpha_1; // the parameter for the dirichlet, indexed by word type
@@ -51,6 +58,8 @@ typedef struct {
     double * alpha_2; // the parameter for the dirichlet, index by word type
     // fixed to optimization
     double * alpha_t;
+
+    double * phi_total;
 
     double alpha_sum_1;
     double alpha_sum_2;
@@ -67,8 +76,8 @@ public:
     void init(double epsilon2, int * num_topics_, const corpus * c);
     void v_em(corpus * c, const settings * setting,
               const char * start, const char * directory);
-    void updatePrior(double *** var_gamma);
-    void globalPrior(double *** var_gamma);
+    void updatePrior(double *** var_gamma, bool is_smoothed, double weight);
+    void globalPrior(double *** var_gamma, bool is_smoothed, double weight);
     void fitDirichlet(gsl_matrix * mat);
 
 
@@ -86,7 +95,12 @@ public:
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
-    void mle( std::vector<suffstats *> ss, int eta_update, const settings * setting);
+
+    // mle global computes the dictionary updates
+    // mle logistic computes logistic repression updates
+    void mle_logistic( std::vector<suffstats *> ss, int eta_update, const settings * setting);
+    void mle_global(vector<suffstats *> ss);
+
     void infer_only_2(corpus * c, const settings * setting, const char * directory);
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
@@ -95,14 +109,15 @@ public:
     double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t, int a);
     double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
-    double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma);
+    double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma, int d);
 
     void save_gamma(char* filename, double*** gamma, int num_docs);
     void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);
     void init_global_as(double epsilon2);
+    void init_dg(int num_docs);
 
-    void updatePrior();
+    //void updatePrior();
 
     int vec_index(int t, int l, int k);
     //int vec_index2(int t, int l, int k, vector<int> stoch_authors);
@@ -110,19 +125,18 @@ public:
     int getDoc(int a, int d);
 
     //stochastic optimization
-    /**
+    //void stoch_logistic(vector<suffstats *> ss, const settings * setting,
+    //    std::vector<double> author_prob, int author_trials,
+    //    std::vector<double> doc_prob, int doc_trials);
+   
+    double doc_e_step(document* doc, double* gamma, double** phi,
+                        suffstats * ss, int eta_update, int _docNum, int t,
+                        double scaling, const settings * setting);
 
-    int vec_index2(int t, int l, int k, int num_auth);
-    void slda::mle_stoch(vector<suffstats *> ss, int eta_update, const settings * setting,
-        vector<int> stoch_authors, vector<double> author_prob, vector<int> stoch_docs, vector<double> doc_prob);
 
-    double slda::slda_inference_stoch(document* doc, double ** var_gamma, double *** phi,
-        alphas *** as, int d, vector<int> stoch_authors, vector<double>
-        author_prob, const settings * setting);
-    **/
 public:
 
-    double * scaling; // scales prior to match author prolificness
+    //double * scaling; // scales prior to match author prolificness
 
     int num_docs; /* number of documents*/
     int * docs_per; // # documents per author, indexed by author
@@ -146,6 +160,7 @@ public:
     // indexed first by class type, then by word type, then by word
     alphas *** as;
     alphas ** as_global;
+    digammas *** dg;
 };
 
 #endif // SLDA_H

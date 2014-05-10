@@ -31,11 +31,17 @@ struct settings
     int   EM_MAX_ITER;
     int   ESTIMATE_ALPHA;
     float PENALTY;
+    bool IS_SMOOTHED;
+    float SMOOTH_WEIGHT;
+    int EM_MIN_ITER;
+
 
     void read_settings(char* filename)
     {
         FILE * fileptr;
         char alpha_action[100];
+
+        int smoothed_int;
 
         fileptr = fopen(filename, "r");
         fscanf(fileptr, "var max iter %d\n", &this->VAR_MAX_ITER);
@@ -43,8 +49,23 @@ struct settings
         fscanf(fileptr, "em max iter %d\n", &this->EM_MAX_ITER);
         fscanf(fileptr, "em convergence %f\n", &this->EM_CONVERGED);
         fscanf(fileptr, "L2 penalty %f\n", &this->PENALTY);
-
         fscanf(fileptr, "alpha %s", alpha_action);
+        fscanf(fileptr, "smoothed %d\n", &smoothed_int);
+        this->IS_SMOOTHED = (smoothed_int != 0);
+        fscanf(fileptr, "smooth weight %f\n", &this->SMOOTH_WEIGHT);
+        fscanf(fileptr, "var min iter %d\n", &this->EM_MIN_ITER);
+
+        // read in not working
+        printf("smoothed, %d", smoothed_int);
+        printf("min iter %d", this->EM_MIN_ITER);
+
+         // values hardwired
+        this->SMOOTH_WEIGHT = 1;
+        this->IS_SMOOTHED = false;
+        this->EM_MIN_ITER = 10;
+        this->IS_SMOOTHED = 0;
+
+
         if (strcmp(alpha_action, "fixed") == 0)
         {
             this->ESTIMATE_ALPHA = 0;
@@ -59,8 +80,19 @@ struct settings
         printf("var max iter %d\n", this->VAR_MAX_ITER);
         printf("var convergence %.2E\n", this->VAR_CONVERGED);
         printf("em max iter %d\n", this->EM_MAX_ITER);
+        printf("em in iter %d\n", this->EM_MIN_ITER);
+
         printf("em convergence %.2E\n", this->EM_CONVERGED);
         printf("L2 penalty %.2E\n", this->PENALTY);
+        if (this->IS_SMOOTHED)
+        {
+            printf("Dirichlet Fit With Smoothing Scale %f\n", this->SMOOTH_WEIGHT);
+        }
+        else
+        {
+            printf("No Dirichlet Smoothing\n");
+        }
+
     }
 };
 
