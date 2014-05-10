@@ -32,6 +32,7 @@
 \usepackage{amsfonts}
 \usepackage{graphicx}
 \usepackage{tikz}
+\usepackage[square, numbers]{natbib}
 %\usepackage{algpseudocode}
 \usepackage{algorithm}
 
@@ -108,9 +109,9 @@
 
 \begin{alertblock}{Goals}
 \begin{itemize}
-\item Classify author writing style in a wide range of media
-\item Extract compact representation of stylistic tendency
-\item Determine which features are most indicative of writing style
+\item Classify author writing style in a wide range of media.
+\item Extract compact representation of stylistic tendency.
+\item Determine which features are most indicative of writing style.
 \end{itemize}
 \end{alertblock}
 
@@ -119,6 +120,16 @@
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Introduction}
+
+In the \textit{authorship detection} problem, one is given:
+\begin{itemize}
+\item A set of documents labeled (by author) on which to train.
+\item A set of anonymized documents to classify.
+\end{itemize}Methods for authorship detection have traditionally depended on lexical analysis of the text, making them relatively context-dependent.
+
+Instead, the \textit{MAD Topic Model} depends solely on syntactic and stylometric features (e.g., part-of-speech tags, meter), which are less context-dependent. MAD treats these features as vocabularies over which topic models can be determined, performing a Supervised Latent Dirichlet Allocation (SLDA) algorithm over $n$-gram stylistic features to determine authorship of anonymized text.
+
+Preliminary results show significant improvement over more naive techniques (such as Logistic MLE) using the same features. As a by-product, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of writing style.
 
 \end{block}
 
@@ -174,7 +185,7 @@ Our features.
 
 \begin{alertblock}{Summary}
 
-The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation\cite{LDA}to indentify authorship in documents with many separate types ("multivalent") count features. MAD is ``doubly supervised'' - it includes a multi-class logistic regression as in\cite{SLDA} - and also fits per-author dirichlet distributions for each feature type. We test the MAD Topic Model on many real world corpora using a variety of n-gram features, ranging from parts of speech, syllable stress, and sequences of word lengths. 
+The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation \citep{Blei2003} to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised''--it includes a multi-class logistic regression as in \cite{Blei2007}--and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
 \end{alertblock} 
 
 %----------------------------------------------------------------------------------------
@@ -201,7 +212,7 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
     \node[main] (beta) [above=of z]{$\beta$};
     \node[main] (lambda) [left=of beta]{$\lambda$};
     \node[main] (y) [right=of w, fill = white!100, xshift = -6mm]{$y$};
-    \node[main] (eta) [above=of y, xshift = 26mm,yshift=-2mm]{$\eta$};
+    \node[main] (eta) [above=of y, xshift = 28mm,yshift=-2mm]{$\eta$};
     \path (alpha) edge [connect] (theta)
           (theta) edge [connect] (z)
           (z) edge [connect] (w)
@@ -209,22 +220,22 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
           (beta) edge [connect] (w)
           (eta) edge [connect] (y)
           (w) edge [connect] (y);
-    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 8mm, xshift=4mm] {};
+    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 10mm, xshift=3mm] {};
 	\node[rectangle, inner sep=8mm,draw=black!100, fit= (z) (w), yshift = -6mm] {};
 	 \node[rectangle, inner sep=8mm, fit= (beta),label=above right:k, yshift = -14mm, xshift=-15mm] {};
 	\node[rectangle, inner sep=8mm,draw=black!100, fit= (beta), yshift = 2mm] {};
-	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 3mm, xshift=12.5mm] {};
+	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 4mm, xshift=-50.5mm] {};
 	\node[rectangle, inner sep=16mm, draw=black!100, fit = (theta) (z) (y) (w), yshift = -12mm, xshift=16] {};
-	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 5mm, xshift=-30mm] {};
+	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 8mm, xshift=-40mm] {};
 	\node[rectangle, inner sep=20mm, draw=black!100, fit = (alpha) (theta) (z) (w) (y), yshift = -13mm, xshift=16] {};
-	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=50] {};
+	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=65] {};
 
 	\node[rectangle, inner sep=28mm, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -13mm, xshift=16] {};
 
     %\node[rectangle, inner sep=4.4mm, draw=black!100, fit= (x) (iota)  (beta) (r) ,label=below right:N,yshift=-3mm ] {};
     %\node[rectangle, inner sep=3.0mm, draw=black!100, fit= (x) ,label=below left:K] {};
   \end{tikzpicture}
-  \caption{MAD Topic Model Graphical Model}
+  \caption{Graphical Model for the MAD Topic Model}
 \end{figure}
 
 
@@ -285,15 +296,10 @@ Our (short) conclusion.
 
 \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
 
-\begin{block}{Acknowledgements}
-
-Anyone to acknowledge?
-
-\end{block}
-
 \begin{block}{References}
 
-Anyone to acknowledge?
+\bibliography{poster}
+\bibliographystyle{plainnat}
 
 \end{block}
 
