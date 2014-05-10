@@ -15,11 +15,14 @@
 \usepackage{morefloats}
 \usepackage{dsfont}
 \usepackage{tikz}
+
 \usepackage[square, numbers]{natbib}
 \usepackage[colorlinks,citecolor=red]{hyperref}
 %\usepackage{algorithmicx}
 %\usepackage{algorithm2e}
 \usepackage{algpseudocode}
+\usepackage{algorithm}
+
 \usepackage{mathtools}
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 
@@ -84,6 +87,8 @@ In total, this composed seven stylometric features. For each document, we extrac
 
 \section{Methods}
 
+
+
 \section{Evaluation}
 
 
@@ -97,6 +102,28 @@ In total, this composed seven stylometric features. For each document, we extrac
 \begin{appendix}
 \section{Scrapers}
 \section{Meter Algorithm}
+\section{}
+\begin{algorithm}
+\begin{algorithmic}[1]
+\Procedure{MAD Generative Process}{}
+ \State $T$ vocabularies, with $K_t$ topics. $D$ Documents, labelled into $A$ classes, with $T$ separate word counts for each of the $T$ vocabularies. assification parameter $\eta_t \in \mathbb{R}^n$
+ 	
+ \For{For Each Vocabulary t}
+ 	\State Fix vocabulary dirichlet $\lambda_t$. Draw $K_t$ topics $\beta_{tk}\sim \text{Dirichlet}(\lambda_{t})$
+ \EndFor
+ \For{Each author $a$}
+ 	\For{each word type $t$}
+ 	 	\State Fix author topic proportions $\alpha_{at}$
+ 	\EndFor
+ 	\For{For each document $d$ written by author $a$}
+		\State Draw topic proportions $\theta_{dt}$, topics assignments $z_{dtn}$, words $w_{dtn}$ $\sim\text{LDA}(\alpha_{at},\beta_t)$.
+ 		\State Draw document label $\sim(\text{softmax}(\sum_{t}\overline{z}_{dt}^T\eta_t))$,where $\overline{z}_{dt}$ are average topic assignments
+ 	\EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
 \end{appendix}
 
 \end{document}

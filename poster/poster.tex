@@ -32,15 +32,20 @@
 \usepackage{amsfonts}
 \usepackage{graphicx}
 \usepackage{tikz}
+%\usepackage{algpseudocode}
+\usepackage{algorithm}
+
 \usetikzlibrary{calc}
 \usetikzlibrary{shapes}
 \usetikzlibrary{arrows}
+\usetikzlibrary{fit,positioning}
 
 \usetheme{confposter} % Use the confposter theme supplied with this template
 
 \setbeamercolor{block title}{fg=BreakfastGreen,bg=white} % Colors of the block titles
 \setbeamercolor{block body}{fg=black,bg=white} % Colors of the body of blocks
 \setbeamercolor{block alerted title}{fg=white,bg=BreakfastBlue!90} % Colors of the highlighted block titles
+
 \setbeamercolor{block alerted body}{fg=black,bg=BreakfastBlue!10} % Colors of the body of highlighted blocks
 % Many more colors are available for use in beamerthemeconfposter.sty
 
@@ -102,9 +107,11 @@
 %----------------------------------------------------------------------------------------
 
 \begin{alertblock}{Goals}
-
-Our goals.
-
+\begin{itemize}
+\item Classify author writing style in a wide range of media
+\item Extract compact representation of stylistic tendency
+\item Determine which features are most indicative of writing style
+\end{itemize}
 \end{alertblock}
 
 %----------------------------------------------------------------------------------------
@@ -112,8 +119,6 @@ Our goals.
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Introduction}
-
-Our introduction.
 
 \end{block}
 
@@ -169,8 +174,7 @@ Our features.
 
 \begin{alertblock}{Summary}
 
-Our summary.
-
+The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation\cite{LDA}to indentify authorship in documents with many separate types ("multivalent") count features. MAD is ``doubly supervised'' - it includes a multi-class logistic regression as in\cite{SLDA} - and also fits per-author dirichlet distributions for each feature type. We test the MAD Topic Model on many real world corpora using a variety of n-gram features, ranging from parts of speech, syllable stress, and sequences of word lengths. 
 \end{alertblock} 
 
 %----------------------------------------------------------------------------------------
@@ -184,8 +188,46 @@ Our summary.
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Model}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+  \tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 16mm]
+  \tikzstyle{connect}=[-latex, thick]
+  \tikzstyle{box}=[rectangle, draw=black!100]
+    \node[main, fill = white!100] (theta)  {$\theta$ };
+    \node[main] (alpha) [left=of theta] { $\alpha$};
+    \node[main] (z) [right=of theta] {$z$};
+    \node[main, fill = black!10] (w) [right=of z] {$w$};
+    \node[main] (beta) [above=of z]{$\beta$};
+    \node[main] (lambda) [left=of beta]{$\lambda$};
+    \node[main] (y) [right=of w, fill = white!100, xshift = -6mm]{$y$};
+    \node[main] (eta) [above=of y, xshift = 26mm,yshift=-2mm]{$\eta$};
+    \path (alpha) edge [connect] (theta)
+          (theta) edge [connect] (z)
+          (z) edge [connect] (w)
+          (lambda) edge [connect] (beta)
+          (beta) edge [connect] (w)
+          (eta) edge [connect] (y)
+          (w) edge [connect] (y);
+    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 8mm, xshift=4mm] {};
+	\node[rectangle, inner sep=8mm,draw=black!100, fit= (z) (w), yshift = -6mm] {};
+	 \node[rectangle, inner sep=8mm, fit= (beta),label=above right:k, yshift = -14mm, xshift=-15mm] {};
+	\node[rectangle, inner sep=8mm,draw=black!100, fit= (beta), yshift = 2mm] {};
+	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 3mm, xshift=12.5mm] {};
+	\node[rectangle, inner sep=16mm, draw=black!100, fit = (theta) (z) (y) (w), yshift = -12mm, xshift=16] {};
+	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 5mm, xshift=-30mm] {};
+	\node[rectangle, inner sep=20mm, draw=black!100, fit = (alpha) (theta) (z) (w) (y), yshift = -13mm, xshift=16] {};
+	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=50] {};
 
-Our model.
+	\node[rectangle, inner sep=28mm, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -13mm, xshift=16] {};
+
+    %\node[rectangle, inner sep=4.4mm, draw=black!100, fit= (x) (iota)  (beta) (r) ,label=below right:N,yshift=-3mm ] {};
+    %\node[rectangle, inner sep=3.0mm, draw=black!100, fit= (x) ,label=below left:K] {};
+  \end{tikzpicture}
+  \caption{MAD Topic Model Graphical Model}
+\end{figure}
+
+
 
 \end{block}
 
@@ -244,6 +286,12 @@ Our (short) conclusion.
 \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
 
 \begin{block}{Acknowledgements}
+
+Anyone to acknowledge?
+
+\end{block}
+
+\begin{block}{References}
 
 Anyone to acknowledge?
 
