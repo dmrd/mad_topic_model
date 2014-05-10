@@ -100,7 +100,7 @@ public:
 
     // mle global computes the dictionary updates
     // mle logistic computes logistic repression updates
-    void mle_logistic( std::vector<suffstats *> ss, int eta_update, const settings * setting);
+    void mle_logistic( std::vector<suffstats *> ss, double rho, const settings * setting);
     void mle_global(vector<suffstats *> ss, double rho, const settings * setting);
 
     void infer_only_2(corpus * c, const settings * setting, const char * directory);
@@ -125,6 +125,8 @@ public:
     //int vec_index2(int t, int l, int k, vector<int> stoch_authors);
 
     int getDoc(int a, int d);
+    double add_penalty(const settings * setting);
+
 
     //stochastic optimization
     //void stoch_logistic(vector<suffstats *> ss, const settings * setting,

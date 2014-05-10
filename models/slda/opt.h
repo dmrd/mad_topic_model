@@ -36,6 +36,7 @@ struct opt_parameter
 	std::vector<suffstats *> ss;
 	slda * model;
 	double PENALTY;
+	double L1_PENALTY;
 };
 
 
@@ -50,6 +51,9 @@ struct dr_parameter
 	double PENALTY;
 
 };
+
+double sign_v(double t);
+double abs_v(double t);
 
 int * sample(std::vector<double> prob, int trials, gsl_rng * rng);
 /*
@@ -72,6 +76,7 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df);
  */
 
 void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
+void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df);
 
 
 
@@ -79,6 +84,7 @@ struct stoch_opt_parameter
 {
 	bool sample_authors;
 	bool sample_docs;
+	bool uniform;
 
 	gsl_rng * rng;
 	int author_trials;
@@ -86,9 +92,8 @@ struct stoch_opt_parameter
 
 	std::vector<double> author_prob;
 	std::vector<double> doc_prob;
-
-	slda * model;
-	double PENALTY;
+	
+	opt_parameter * op; 
 };
 
 //function to compute softmax objective using stochastic sampling

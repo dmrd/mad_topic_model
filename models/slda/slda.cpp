@@ -541,6 +541,7 @@ void slda::v_em(corpus * c, const settings * setting,
                      ss[t], ETA_UPDATE, d,  t, 1, setting);
                 }
             }
+            likelihood-=add_penalty(setting);
 
         }
 
@@ -609,6 +610,9 @@ void slda::v_em(corpus * c, const settings * setting,
         write_word_assignment(w_asgn_file, c->docs[d], phi);
 
     }
+
+    likelihood -= add_penalty(setting);
+
     //printf("FINAL LOG perplexity %f", perplexity);
 
     fclose(w_asgn_file);
@@ -712,7 +716,7 @@ void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setti
         }   
 }
 
-void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const settings * setting)
+void slda::mle_logistic(std::vector<suffstats *> ss, double rho, const settings * setting)
 {
     int k, w, t;
     //the label part goes here
@@ -733,10 +737,35 @@ void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const setti
     param.ss = ss;
     param.model = this;
     param.PENALTY = setting->PENALTY;
+    param.L1_PENALTY =  setting->L1_PENALTY;
+    gsl_vector * x;
+
+
+    if (setting->STOCHASTIC)
+    {
+        //initialize the stochastic elements 
+        stoch_opt_parameter par2;
+        par2.op = &param;
+        // loop over batches?
+        gsl_vector * df = gsl_vector_alloc(opt_size);
+        softmax_df_stoch(x, (void *) &par2, df);
+        for (t = 0; t < num_word_types; t++)
+            for (l = 0; l < num_classes-1; l++)
+                for (k = 0; k < num_topics[t]; k++)
+                {
+                    eta[t][l][k] -= rho*gsl_vector_get(df,vec_index(t,l,k));
+                    if(setting->USE_L1)
+                        eta[t][l][k] -= sign_v(eta[t][l][k]);
+                }
+        double f = softmax_f(x,(void *) &par2);
+        printf("final f: %f\n", f);
+
+        return;
+
+    }
 
     const gsl_multimin_fdfminimizer_type * T;
     gsl_multimin_fdfminimizer * s;
-    gsl_vector * x;
     gsl_multimin_function_fdf opt_fun;
     opt_fun.f = &softmax_f;
     opt_fun.df = &softmax_df;
@@ -751,6 +780,15 @@ void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const setti
         for (l = 0; l < num_classes-1; l++)
             for (k = 0; k < num_topics[t]; k++)
                 gsl_vector_set(x, vec_index(t,l,k), eta[t][l][k]);
+
+
+    /// L1 Logistic Regression
+    //if (setting->USE_L1)
+    //{
+        //lgbfs_opt(param, x);
+    //}
+
+    // normal optimization, possiby with ridge
 
     T = gsl_multimin_fdfminimizer_vector_bfgs;
     s = gsl_multimin_fdfminimizer_alloc(T, opt_size);
@@ -771,6 +809,7 @@ void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const setti
             printf("step: %02d -> f: %f\n", opt_iter-1, f);
     } while (status == GSL_CONTINUE && opt_iter < MSTEP_MAX_ITER);
 
+
     for (t = 0; t < num_word_types; t++)
         for (l = 0; l < num_classes-1; l++)
             for (k = 0; k < num_topics[t]; k++)
@@ -780,6 +819,24 @@ void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const setti
     gsl_vector_free (x);
 
     printf("final f: %f\n", f);
+}
+
+
+double slda::add_penalty(const settings * setting)
+{
+    double PENALTY = setting->PENALTY;
+    double L1_PENALTY = setting->L1_PENALTY;
+    int t, l,k;
+    double output = 0;
+    for (t = 0; t < num_word_types; t++)
+        for (l = 0; l < num_classes-1; l++)
+            for (k = 0; k < num_topics[t]; k++)
+            {
+                output += pow(eta[t][l][k], 2) * PENALTY/2.0;
+                output += abs_v(eta[t][l][k]) * L1_PENALTY;
+            }
+    return output;
+
 }
 
 double slda::doc_e_step(document* doc, double* gamma, double** phi,
@@ -1107,10 +1164,9 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
     return likelihood;
 }
 
-//mean topic proportion approach to finding authorship
-
+// descending order comparator
 bool slda::mComp ( const mypair& l, const mypair& r)
-        { return l.first < r.first; }
+        { return l.first > r.first; }
 
 void slda::infer_only(corpus * c, const settings * setting, const char * directory)
 {
@@ -1228,7 +1284,7 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
                 for (k = 0; k < num_topics[t]; k++)
                     score += eta[t][i][k] * phi_m[t][k];
 
-            labels.push_back(mypair(0.0,num_classes-1));
+            labels.push_back(mypair(score,i));
 
             if (score > base_score)
             {
@@ -1895,90 +1951,6 @@ void slda::save_model(const char * filename)
     fclose(file);
 }
 
-
-//stochastic gradient descent
-
-
-/**
-// not working. only here for instructive purposes
-void slda::stoch_logistic(vector<suffstats *> ss, const settings * setting,
-    std::vector<double> author_prob, int author_trials,
-    std::vector<double> doc_prob, int doc_trials)
-{
-    
-   //the label part goes here
-    printf("Maximizing ...\n");
-    double f = 0.0;
-    int status;
-    int opt_iter;
-
-    // the total length of all the eta parameters
-    int opt_size = 0;
-    for (t = 0; t< num_word_types; t++)
-        opt_size += num_topics[t];
-    opt_size = opt_size * (num_classes-1);
-
-    int l;
-
-    stoch_opt_parameter param;
-    param.ss = ss;
-    param.model = this;
-    param.PENALTY = setting->PENALTY;
-    param.author_prob = author_prop;
-    param.doc_prob = doc_prob;
-    param.author_trials = author_trials;
-    param.doc_trials = doc_trials;
-    param.sample_authors = false;
-    param.rng = gsl_rng_alloc(gsl_rng_taus);
-
-    const gsl_multimin_fdfminimizer_type * T;
-    gsl_multimin_fdfminimizer * s;
-    gsl_vector * x;
-    gsl_multimin_function_fdf opt_fun;
-    opt_fun.f = &softmax_f;
-    opt_fun.df = &softmax_df;
-    opt_fun.fdf = &softmax_fdf;
-    opt_fun.n = opt_size;
-    opt_fun.params = (void*)(&param);
-    x = gsl_vector_alloc(opt_size);
-
-
-    // allocate the long vector of eta values to be optimized
-    for (t = 0; t < num_word_types; t++)
-        for (l = 0; l < num_classes-1; l++)
-            for (k = 0; k < num_topics[t]; k++)
-                gsl_vector_set(x, vec_index(t,l,k), eta[t][l][k]);
-
-    T = gsl_multimin_fdfminimizer_vector_bfgs;
-    s = gsl_multimin_fdfminimizer_alloc(T, opt_size);
-    gsl_multimin_fdfminimizer_set(s, &opt_fun, x, 0.02, 1e-4);
-
-    opt_iter = 0;
-    do
-    {
-        opt_iter++;
-        status = gsl_multimin_fdfminimizer_iterate(s);
-        if (status)
-            break;
-        status = gsl_multimin_test_gradient(s->gradient, 1e-3);
-        if (status == GSL_SUCCESS)
-            break;
-        f = -s->f;
-        if ((opt_iter-1) % 10 == 0)
-            printf("step: %02d -> f: %f\n", opt_iter-1, f);
-    } while (status == GSL_CONTINUE && opt_iter < MSTEP_MAX_ITER);
-
-    for (t = 0; t < num_word_types; t++)
-        for (l = 0; l < num_classes-1; l++)
-            for (k = 0; k < num_topics[t]; k++)
-                eta[t][l][k] = gsl_vector_get(s->x, vec_index(t,l,k));
-
-    gsl_multimin_fdfminimizer_free (s);
-    gsl_vector_free (x);
-
-    printf("final f: %f\n", f);
-}
-**/
 
 
 
