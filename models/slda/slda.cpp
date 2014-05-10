@@ -544,7 +544,7 @@ void slda::v_em(corpus * c, const settings * setting,
 
         }
 
-        if (i % 3 == 0)
+        if (i % 3 == 0 && setting->ESTIMATE_ALPHA)
         {
             cout << "calling update prior\n";
             updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
@@ -579,10 +579,11 @@ void slda::v_em(corpus * c, const settings * setting,
         }
     }
 
-
-    //updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-    //this->SMOOTH_WEIGHTglobalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-
+    if (setting->ESTIMATE_ALPHA)
+    {
+        updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+        //globalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+    }
     // output the final model
     sprintf(filename, "%s/final.model", directory);
     save_model(filename);
@@ -833,8 +834,24 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
 
     return (likelihood);
 }
+/**
+double slda::doc_perplexity(document* doc, double ** var gamma, )
+{
+    int k, n, l, t;
+    for (t = 0; t < num_word_types; t++)
+    {
+        for (n = 0; n < doc->length[t]; n++)
+        {
 
+        }
+    }
+}
 
+double slda::auth_perplexity(document* doc, double ** var gamma, )
+{
+    int k, n, l, t;
+}
+**/
 double slda::slda_compute_likelihood(document* doc, double*** phi,
     double** var_gamma, int d)
 {

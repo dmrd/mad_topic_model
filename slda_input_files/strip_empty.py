@@ -30,7 +30,7 @@ for doc in lines[1:]:
         if l[0] == '0':
             ignored.add(i)
 
-print ignored
+print("Empty lines: {}".format(ignored))
 
 for i, (path, doc) in enumerate(zip(files, lines)):
     base, name = os.path.split(path)
