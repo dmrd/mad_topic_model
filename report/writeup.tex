@@ -45,7 +45,7 @@
 
 
 
-\title{MAD Style: Multivalence Authorship Detection (MAD) Topic Models for Stylometric Analysis}
+\title{MAD Style: Multivalent Authorship Detection (MAD) Topic Models for Stylometric Analysis}
 
 \author{David Dohan, Charles Marsh, Shubhro Saha, Max Simchowitz}
 \begin{document}
@@ -54,22 +54,49 @@
 \begin{abstract}
 We draw a lot on \citep{Blei2007}.
 \end{abstract}
+
 \section{Introduction}
+
 \section{Literature Review}
-\section{Test Corpi}
+
+\section{Data}
+To collect data for training and testing, we wrote scrapers for Project Gutenberg, Quora, and Nassau Weekly. We selected these three data sources for their diversity in topic, language, and length. For example, Project Gutenberg features lengthy narrative texts while Quora features shorter comments in colloquial language. With Nassau Weekly we see a mix: modern prose in a mix of narrative and editorial styles. Because of this diversity, these corpora provide ample training and testing data for our models.
+
+We implemented our scrapers in Python; the full source code can be found in the Appendix of this report. //TODO: David, write about nature of Gutenberg data. The Quora dataset features about 1600 comments from roughly 100 popular Quora users. The users were selected based on online reports for ``most followed" users on the network. Because Quora is a question-answer web site, this content is mostly informative in nature. Depending on the thoroughness of a user's answer, the length can vary from a single word to several paragraphs.
+
+The Nassau Weekly is a student-run humor/culture newspaper. Our dataset features over 550 articles from about 200 authors. The content in this dataset is largely narrative or editorial in nature, and tend to be several paragraphs in length. Interestingly, authors for the publication tend to write in vastly different tones across articles because of the unique, cultish nature of the newspaper. The challenge for our authorship models is to detect consistent features in this dataset across articles by the same author.
+
 \section{Feature Extraction}
+
+We incorporated six different stylometric features, each of which was composed into $n$-grams of varying sizes before being fed into the model:
+\begin{enumerate}
+\item Part-of-Speech (POS) tags (e.g., `Noun' for the word ``apple''). The Penn-Treebank tag set was used, and tagging itself was performed using the Maximum Entropy approach of \citet{Ratnaparkhi}.
+\item Etymological tags (e.g., `Old English' for the word ``great''). Etymological information was scraped from \textit{Webster's} Dictionary \citep{Dictionary}. As etymology is inherently root-based, words absent from the dataset were first stemmatized using the method of \citet{Porter} and lemmatized using the WordNet method of \citet{Fellbaum}. If either of the results returned were present in the dictionary, their corresponding etymological tag was returned. Else, the entry with minimum Levenshtein distance was used in-place.
+\item Per-syllable stress (e.g., `(0, 1, 0)' for ``continue", where a 1 indicates stress). Stresses were extracted from the CMU Pronouncing Dictionary \citep{Lenzo}. As with etymology, words absent from the dictionary were looked up by minimizing Levenshtein distance with the present keys.
+\item Syllables-per-word (i.e., `3' for ``continue"), again looked-up in the CMU Pronouncing Dictionary \citep{Lenzo}.
+\item Syllable counts, i.e., the total number of syllables between pieces of punctuation.
+\item Word counts, i.e., the total number of words between pieces of punctuation.
+\end{enumerate}
+
+On top of these primitives, we also developed an algorithm to extract meter, inspired by \citet{Genzel}. While meter is traditionally a poetic quality (and is treated as such in \citep{Genzel}), we brought it to prose by focusing on the classical meter styles of Iambic, Spondee, etc., all of which are based on 2- or 3-syllable `feet'. We viewed meter as a function of stresses and specifically focused on the stress $(2\times3)=6$-grams, appending these $6$-grams with two additional bits: the first to indicate distance from the latest comma, and the second to indicate distance from the latest piece of punctuation. The full algorithm can be found in the Appendix.
+
+In total, this composed seven stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $6$-grams were produced).
+
 \section{Methods}
+
 \section{Evaluation}
 
 
 
 \newpage
 \bibliography{writeup}
-\bibliographystyle{abbrv}
+\bibliographystyle{plainnat}
 
 \newpage
 
 \begin{appendix}
+\section{Scrapers}
+\section{Meter Algorithm}
 \end{appendix}
 
 \end{document}
