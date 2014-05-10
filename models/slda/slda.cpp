@@ -137,6 +137,8 @@ void slda::init(double epsilon2, int * num_topics_,
                 const corpus * c)
 {
     num_topics = num_topics_;
+    top_prior = 1;
+    first_run = 1;
 
     docs_per = c->docsPer;
     docAuthors = c->docAuthors;
@@ -155,7 +157,7 @@ void slda::init(double epsilon2, int * num_topics_,
     // iterate through each type of word
     for (int t = 0; t < num_word_types; t++)
     {
-
+        lambda.push_back(std::vector<std::vector<double > >());
         log_prob_w.push_back(std::vector<std::vector<double > >());
         eta.push_back(std::vector<std::vector<double > >());
 
@@ -163,6 +165,7 @@ void slda::init(double epsilon2, int * num_topics_,
         for (int k = 0; k < num_topics[t]; k++)
         {
             log_prob_w[t].push_back(std::vector<double>(size_vocab[t], 0));
+            lambda[t].push_back(std::vector<double>(size_vocab[t], 0));
         }
 
         for (int i = 0; i < num_classes-1; i++)
@@ -457,31 +460,24 @@ void slda::v_em(corpus * c, const settings * setting,
     int d, n, i, t; // iterates
     double L2penalty = setting->PENALTY;
 
-
+    // seed a random number generator for inference
+    gsl_rng * rng = gsl_rng_alloc(gsl_rng_taus);
+    time_t seed;
+    time(&seed);
+    gsl_rng_set(rng, (long) seed);
 
     printf("initializing ...\n");
 
     std::vector<suffstats * > ss;
-
     for (t = 0; t < num_word_types; t++)
     {
         ss.push_back(new_suffstats(t));
-        //if (strcmp(start, "seeded") == 0)
-        //{
-        //    corpus_initialize_ss(ss[t], c);
-        //    mle(ss[t], 0, setting);
-        //}
-        //else if (strcmp(start, "random") == 0)
-        //{
         random_initialize_ss(ss[t], c,t );
-        //}
-        //else
-        //{
-        //   load_model(start);
-        //  load_model_initialize_ss(ss[t], c);
-        //}
+
+        //other forms of initialization supported in original code
     }
-    mle_global(ss);
+
+    mle_global(ss, 0, setting);
     mle_logistic(ss, 0, setting);
 
     // allocate variational parameters
@@ -506,7 +502,7 @@ void slda::v_em(corpus * c, const settings * setting,
             phi[t][n] = new double [num_topics[t]];
     }
 
-    // COME BACK LATER
+
     FILE * likelihood_file = NULL;
     sprintf(filename, "%s/likelihood.dat", directory);
     likelihood_file = fopen(filename, "w");
@@ -514,7 +510,6 @@ void slda::v_em(corpus * c, const settings * setting,
     int ETA_UPDATE = 0;
 
     i = 0;
-    // CHECK THIS LATER
     while (((converged < 0) || (converged > setting->EM_CONVERGED || i <= setting->EM_MAX_ITER) || (i <= LDA_INIT_MAX+2)) && (i <= setting->EM_MAX_ITER))
     {
         printf("**** em iteration %d ****\n", ++i);
@@ -527,16 +522,26 @@ void slda::v_em(corpus * c, const settings * setting,
             ETA_UPDATE = 1;
         // e-step
         printf("**** e-step ****\n");
-        for (d = 0; d < c->num_docs; d++)
+        if (false) //(setting->STOCHASTIC)
         {
-            if ((d % 100) == 0)
-                printf("document %d\n", d);
-            likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
-            for (t=0; t< num_word_types; t++)
+            return;
+
+            first_run = -1;
+        }
+        else
+        {
+            for (d = 0; d < c->num_docs; d++)
             {
-                likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t],
-                 ss[t], ETA_UPDATE, d,  t, 1, setting);
+                if ((d % 100) == 0)
+                    printf("document %d\n", d);
+                likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
+                for (t=0; t< num_word_types; t++)
+                {
+                    likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t],
+                     ss[t], ETA_UPDATE, d,  t, 1, setting);
+                }
             }
+
         }
 
         if (i % 3 == 0)
@@ -550,7 +555,7 @@ void slda::v_em(corpus * c, const settings * setting,
         printf("**** m-step ****\n");
 
         //update dictionary and logistic parameter
-        mle_global(ss);
+        mle_global(ss, 0, setting);
         mle_logistic(ss, ETA_UPDATE, setting);
 
 
@@ -643,6 +648,65 @@ int slda::vec_index(int t, int l, int k)
     output += k;
 
     return output;
+}
+
+void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setting)
+{
+    int k, w, t;
+
+    for (t = 0; t < num_word_types; t++)
+        for (k = 0; k < num_topics[t]; k++)
+        {
+            if (setting->TOPIC_SMOOTH)
+            {
+                cout << "SMOOTH TOPICS \n";
+                //not stochastic
+                if (!setting->STOCHASTIC || first_run != 1)
+                    for (w = 0; w < size_vocab[t]; w++)
+                    {
+                        lambda[t][k][w] = top_prior + ss[t]->word_ss[k][w];
+                    }
+                //stochastic
+                else
+                {
+                    double lambda_old, lambda_new;
+                    for (w = 0; w < size_vocab[t]; w++)
+                    {
+                        lambda_new = top_prior + ss[t]->word_ss[k][w];
+                        lambda_old = lambda[t][k][w];
+                        lambda[t][k][w] = lambda_new*rho + (1-rho)*lambda_old;
+                    }
+                }
+
+                double psi_sum = 0;
+                // fill in log_prob_w equivalence
+                for (w = 0; w < size_vocab[t]; w++)
+                {
+
+                    log_prob_w[t][k][w] = digamma(lambda[t][k][w]);
+                    psi_sum += log_prob_w[t][k][w];
+                }
+                for (w = 0; w < size_vocab[t]; w++)
+                {
+                    log_prob_w[t][k][w] -= psi_sum;
+                }
+            }
+            //no smoothing
+            else
+            {
+                for (w = 0; w < size_vocab[t]; w++)
+                {
+                    if (ss[t]->word_ss[k][w] > 0) 
+                    {
+                        log_prob_w[t][k][w] = (double)log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
+                    } 
+                    else 
+                    {
+                        log_prob_w[t][k][w] = -100.0;
+                    }
+                }
+            }
+        }   
 }
 
 void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const settings * setting)
@@ -1727,23 +1791,7 @@ void slda::save_model(const char * filename)
 
 //stochastic gradient descent
 
-void slda::mle_global(vector<suffstats *> ss)
-{
-    int k, w, t;
 
-    for (t = 0; t < num_word_types; t++)
-        for (k = 0; k < num_topics[t]; k++)
-        {
-            for (w = 0; w < size_vocab[t]; w++)
-            {
-                if (ss[t]->word_ss[k][w] > 0) {
-                    log_prob_w[t][k][w] = (double)log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
-                } else {
-                    log_prob_w[t][k][w] = -100.0;
-                }
-            }
-        }   
-}
 /**
 // not working. only here for instructive purposes
 void slda::stoch_logistic(vector<suffstats *> ss, const settings * setting,

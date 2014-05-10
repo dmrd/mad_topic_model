@@ -51,7 +51,7 @@ struct dr_parameter
 
 };
 
-
+int * sample(std::vector<double> prob, int trials, gsl_rng * rng);
 /*
  * function to compute the value of the obj function, then 
  * return it
