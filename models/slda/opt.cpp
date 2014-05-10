@@ -25,9 +25,113 @@
 #include <vector>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_sf.h>
+#include <stdio.h>
+#include <lbfgs.h>
 
 using namespace std;
 
+
+
+double sign_v(double t)
+{
+    if (t > 0) return 1;
+    if (t == 0) return 0;
+    return -1;
+}
+double abs_v(double t)
+{
+    if (t > 0) return 1;
+    if (t == 0) return 0;
+    return -1;
+}
+/**
+static lbfgsfloatval_t evaluate(
+    void *instance,
+    const lbfgsfloatval_t *x,
+    lbfgsfloatval_t *g,
+    const int n,
+    const lbfgsfloatval_t step
+    )
+{
+
+    int i;
+    opt_parameter * op = (opt_parameter *) instance;
+    lbfgsfloatval_t fx = 0.0;
+    double PENALTY = op->L1_PENALTY;
+
+    gsl_vector *x_gsl = gsl_vector_alloc(n);
+    gsl_vector *df = gsl_vector_alloc(n);
+
+    for (i = 0;i < n;i ++ ) {
+        x_gsl->data[i]  = x[i];
+    }
+
+    fx = softmax_f( x_gsl,  instance);
+    softmax_df( x_gsl, instance, df);
+
+    for (i = 0;i < n;i ++ ) {
+        fx += (PENALTY*abs(x[i])); //l1 PENALTY
+        g[i]  = df->data[i]+(sign_v(x[i])*PENALTY);
+    }
+    return fx;
+}
+
+static int progress(
+    void *instance,
+    const lbfgsfloatval_t *x,
+    const lbfgsfloatval_t *g,
+    const lbfgsfloatval_t fx,
+    const lbfgsfloatval_t xnorm,
+    const lbfgsfloatval_t gnorm,
+    const lbfgsfloatval_t step,
+    int n,
+    int k,
+    int ls
+    )
+{
+    printf("Iteration %d:\n", k);
+    printf("  fx = %f, x[0] = %f, x[1] = %f\n", fx, x[0], x[1]);
+    printf("  xnorm = %f, gnorm = %f, step = %f\n", xnorm, gnorm, step);
+    printf("\n");
+    return 0;
+}
+
+int lgbfs_opt(void *opt_param, gsl_vector*x_gsl)
+{
+    int i, ret = 0;
+    lbfgsfloatval_t fx;
+    int N = x_gsl->size;
+    lbfgsfloatval_t *x = lbfgs_malloc(N);
+    lbfgs_parameter_t param;
+
+    if (x == NULL) {
+        printf("ERROR: Failed to allocate a memory block for variables.\n");
+        return 1;
+    }
+
+    // Initialize the variables. 
+    for (i = 0;i < N;i ++) {
+        x[i] = x_gsl->data[i];
+    }
+
+    // Initialize the parameters for the L-BFGS optimization. 
+    lbfgs_parameter_init(&param);
+    // param.linesearch = LBFGS_LINESEARCH_BACKTRACKING;
+
+    //
+    //    Start the L-BFGS optimization; this will invoke the callback functions
+    //    evaluate() and progress() when necessary.
+    //
+    ret = lbfgs(N, x, &fx, evaluate, progress, opt_param, &param);
+
+    // Report the result. 
+    printf("L-BFGS optimization terminated with status code = %d\n", ret);
+    printf("  fx = %f, x[0] = %f, x[1] = %f\n", fx, x[0], x[1]);
+
+    lbfgs_free(x);
+    return 0;
+}
+*/
 
 double dr_f(const gsl_vector * x, void * opt_param)
 {
@@ -93,6 +197,8 @@ double softmax_f(const gsl_vector * x, void * opt_param)
 {
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
     double PENALTY = gsl_param->PENALTY;
+    double L1_PENALTY = gsl_param->PENALTY;
+
     slda * model = gsl_param->model;
     std::vector<suffstats *> ss = gsl_param->ss;
 
@@ -111,6 +217,8 @@ double softmax_f(const gsl_vector * x, void * opt_param)
                 // check this out later
                 model->eta[t][l][k] = gsl_vector_get(x, model->vec_index(t, l, k));
                 f_regularization -= pow(model->eta[t][l][k], 2) * PENALTY/2.0;
+                f_regularization -= abs_v(model->eta[t][l][k]) * L1_PENALTY;
+
             }
         }
     f = 0.0; //log likelihood
@@ -158,6 +266,8 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
 
     opt_parameter * gsl_param = (opt_parameter *)opt_param;
     double PENALTY = gsl_param->PENALTY;
+    double L1_PENALTY = gsl_param->L1_PENALTY;
+
     slda * model = gsl_param->model;
     std::vector<suffstats *> ss = gsl_param->ss;
 
@@ -183,6 +293,8 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
                 idx = model->vec_index(t,l,k);
                 model->eta[t][l][k] = gsl_vector_get(x, idx);
                 g = -PENALTY * model->eta[t][l][k];
+                g = -PENALTY * sign_v(model->eta[t][l][k]);
+
                 gsl_vector_set(df, idx, g);
             }
 
@@ -354,42 +466,44 @@ int * sample(std::vector<double> prob, int trials, gsl_rng * rng)
     return output;
 }
 
-/*
+
 void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
    {
 
     stoch_opt_parameter * gsl_param = (stoch_opt_parameter *)opt_param;
-    double PENALTY = gsl_param->PENALTY;
-    slda * model = gsl_param->model;
-    std::vector<suffstats *> ss = gsl_param->ss;
+    opt_parameter * op = gsl_param->op;
+
+    double PENALTY = op->PENALTY;
+    slda * model = op->model;
+    std::vector<suffstats *> ss = op->ss;
 
     std::vector<double> author_prob = gsl_param->author_prob;
     std::vector<double> doc_prob = gsl_param-> doc_prob;
     int author_trials = gsl_param->author_trials;
     int doc_trials = gsl_param->doc_trials;
     gsl_rng * rng = gsl_param->rng;
-    int[] stoch_authors;
+    int* stoch_authors;
 
     if (gsl_param->sample_authors)
          stoch_authors = sample(author_prob, author_trials, rng);
     else
     {
         author_trials = model->num_classes-1;
-        stoch_authors = new double[author_trials]
-        for (size_t a = 0, a < author_trials; a++)
+        stoch_authors = new int[author_trials];
+        for (size_t a = 0; a < author_trials; a++)
         {
             stoch_authors[a] = a;
             author_prob[a] = 1/((double)author_trials);
         }
     }
 
-    int[] stoch_docs =  sample(doc_prob, author_trials, rng);
+    int* stoch_docs =  sample(doc_prob, author_trials, rng);
 
     gsl_vector_set_zero(df);
     gsl_vector * df_tmp = gsl_vector_alloc(df->size);
 
     double a1 = 0.0, a2 = 0.0, g,t0, dp,lp;
-    int k, d, j, l, idx, t, li, di,li;
+    int k, d, j, l, idx, t, di,li;
 
 
     double ** eta_aux = new double * [model->num_word_types];
@@ -426,11 +540,11 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
             for (k = 0; k < model->num_topics[t]; k++)
             {
                 l = ss[t]->labels[d];
-                if(l < model.num_classes - 1)
+                if(l < model->num_classes - 1)
                 {
                     // REMEMBER TO SCALE
                     idx = model->vec_index(t,l,k);
-                    g = *gsl_vector_get(df, idx) + ss[t]->z_bar[d].z_bar_m[k];
+                    g = gsl_vector_get(df, idx) + ss[t]->z_bar[d].z_bar_m[k];
                     gsl_vector_set(df, idx, g);
                 }
             }
@@ -440,7 +554,7 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
         t0 = 0.0; // in log space, 1+exp()+exp()+....
         gsl_vector_memcpy(df_tmp, df);
         gsl_vector_set_zero(df);
-        for (li = 0; li < stoch_authors.size(); li++)
+        for (li = 0; li < author_trials; li++)
         {
             l = stoch_authors[li];
             lp = author_prob[li];
@@ -493,12 +607,13 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
     gsl_vector_free(df_tmp);
    }
 
+
 void softmax_fdf_stoch(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df)
 {
         softmax_f(x, opt_param);
-        softmax_df_stoch(x, opt_param, df)
+        softmax_df_stoch(x, opt_param, df);
 }
-*/
+
 
 /**
    double softmax_f_stoch(const gsl_vector * x, void * opt_param)

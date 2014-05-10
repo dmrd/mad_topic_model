@@ -36,6 +36,8 @@ struct settings
     int EM_MIN_ITER;
     bool TOPIC_SMOOTH;
     bool STOCHASTIC;
+    bool USE_L1;
+    double L1_PENALTY;
 
 
 
@@ -58,6 +60,8 @@ struct settings
         fscanf(fileptr, "smooth weight %f\n", &this->SMOOTH_WEIGHT);
         fscanf(fileptr, "var min iter %d\n", &this->EM_MIN_ITER);
 
+        USE_L1 = false;
+        L1_PENALTY = 0;//.01;
         // read in not working
         printf("smoothed, %d", smoothed_int);
         printf("min iter %d", this->EM_MIN_ITER);
