@@ -544,7 +544,7 @@ void slda::v_em(corpus * c, const settings * setting,
 
         }
 
-        if (i % 3 == 0)
+        if (i % 3 == 0 && setting->ESTIMATE_ALPHA)
         {
             cout << "calling update prior\n";
             updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
@@ -579,10 +579,11 @@ void slda::v_em(corpus * c, const settings * setting,
         }
     }
 
-
-    //updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-    //this->SMOOTH_WEIGHTglobalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-
+    if (setting->ESTIMATE_ALPHA)
+    {
+        updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+        //globalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+    }
     // output the final model
     sprintf(filename, "%s/final.model", directory);
     save_model(filename);
@@ -597,6 +598,7 @@ void slda::v_em(corpus * c, const settings * setting,
     FILE * w_asgn_file = NULL;
     sprintf(filename, "%s/word-assignments.dat", directory);
     w_asgn_file = fopen(filename, "w");
+    
     for (d = 0; d < c->num_docs; d++)
     {
         //final inference
@@ -604,10 +606,10 @@ void slda::v_em(corpus * c, const settings * setting,
             printf("final e step document %d\n", d);
 
         likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d,setting);
-
         write_word_assignment(w_asgn_file, c->docs[d], phi);
 
     }
+    //printf("FINAL LOG perplexity %f", perplexity);
 
     fclose(w_asgn_file);
 
@@ -659,7 +661,7 @@ void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setti
         {
             if (setting->TOPIC_SMOOTH)
             {
-                cout << "SMOOTH TOPICS \n";
+                //cout << "SMOOTH TOPICS \n";
                 //not stochastic
                 if (!setting->STOCHASTIC || first_run != 1)
                     for (w = 0; w < size_vocab[t]; w++)
@@ -684,8 +686,9 @@ void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setti
                 {
 
                     log_prob_w[t][k][w] = digamma(lambda[t][k][w]);
-                    psi_sum += log_prob_w[t][k][w];
+                    psi_sum += lambda[t][k][w];
                 }
+                psi_sum = digamma(psi_sum);
                 for (w = 0; w < size_vocab[t]; w++)
                 {
                     log_prob_w[t][k][w] -= psi_sum;
@@ -833,7 +836,38 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
     return (likelihood);
 }
 
+double slda::doc_perplexity(document* doc, double ** expAlpha, double *** phi)
+{
+    int k, n, l, t;
+    double perplexity = 0;
 
+    for (t = 0; t < num_word_types; t++)
+    {
+        for (n = 0; n < doc->length[t]; n++)
+        {
+            double temp = 0;
+            temp= log_prob_w[t][0][doc->words[t][n]] + phi[t][n][0];
+            for (k = 1; k < num_topics[t]; k++)      
+            {
+                temp = log_sum(temp, log_prob_w[t][0][doc->words[t][n]] + phi[t][n][0]); 
+            }
+            perplexity+=temp;
+        }
+        
+        for (k = 0; k < num_topics[t]; k++)
+            perplexity+= doc->length[t]*expAlpha[t][k];
+    }
+    return perplexity;
+}
+
+
+
+/**
+double slda::auth_perplexity(document* doc, double ** var gamma, )
+{
+    int k, n, l, t;
+}
+**/
 double slda::slda_compute_likelihood(document* doc, double*** phi,
     double** var_gamma, int d)
 {
@@ -1074,6 +1108,10 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
 }
 
 //mean topic proportion approach to finding authorship
+
+bool slda::mComp ( const mypair& l, const mypair& r)
+        { return l.first < r.first; }
+
 void slda::infer_only(corpus * c, const settings * setting, const char * directory)
 {
     int i, k, d, n, t;
@@ -1081,6 +1119,12 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
     double base_score, score;
     int label;
     int num_correct = 0;
+
+    std::vector<int> recallAt;
+    for (i = 0; i < 2; i++)
+        recallAt.push_back(0);
+    if (num_classes > 2)
+         recallAt.push_back(0);
 
     char filename[100];
     int * max_length = c->max_corpus_length();
@@ -1116,6 +1160,27 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
     sprintf(filename, "%s/inf-labels.dat", directory);
     inf_label_file = fopen(filename, "w");
 
+    double perplexity=0;
+    int bigTotal=0;
+
+    double *** expAlpha = new double ** [num_classes];
+
+    for (i = 0; i < num_classes; i++)
+    {
+        expAlpha[i] =  new double *[num_word_types];
+        for (t = 0; t < num_word_types; t++)
+        {
+            expAlpha[i][t] = new double [num_topics[t]];
+
+            double psi_sum = digamma(as[t][i]->alpha_sum_t);
+            for (k = 0; k < num_topics[t]; k++)
+            {
+                expAlpha[i][t][k] = digamma(as[t][i]->alpha_t[k]) - psi_sum;
+            }
+        }
+    }
+
+
     for (d = 0; d < c->num_docs; d++)
     {
         if ((d % 100) == 0)
@@ -1123,6 +1188,7 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
         document * doc = c->docs[d];
         likelihood = 0;
+
         for (t = 0; t < num_word_types; t++)
         {
 
@@ -1142,9 +1208,18 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
             }
         }
 
+        perplexity += doc_perplexity(doc, expAlpha[doc->label], phi);
+        // sum of total words
+        for (t = 0; t < num_word_types; t++)
+            bigTotal+= doc->total[t];
+
         //do classification
+
+    
+        std::vector<mypair> labels;
         label = num_classes-1;
         base_score = 0.0;
+        labels.push_back(mypair(0.0,num_classes-1));
         for (i = 0; i < num_classes-1; i++)
         {
             score = 0.0;
@@ -1153,24 +1228,56 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
                 for (k = 0; k < num_topics[t]; k++)
                     score += eta[t][i][k] * phi_m[t][k];
 
+            labels.push_back(mypair(0.0,num_classes-1));
+
             if (score > base_score)
             {
                 base_score = score;
                 label = i;
             }
         }
+
         if (label == doc->label)
             num_correct++;
+
+        //sort labels by score
+        std::sort(labels.begin(), labels.end(), mComp);
+        for (size_t i1 = 0; i1 < recallAt.size(); i1++)
+        {
+            // if a label is correct, then recall at i2>=i1 is incremented
+            if (labels[i1].second == doc->label)
+            {
+                for (size_t i2 = i1; i2 < recallAt.size(); i2++)
+                    recallAt[i2]++;
+                break;
+            }
+        }
 
         fprintf(likelihood_file, "%5.5f\n", likelihood);
         fprintf(inf_label_file, "%d\n", label);
     }
 
     printf("average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
+    for (i = 0; i < recallAt.size(); i++)
+    {
+        printf("recall at %d: %.3f\n", i+1, (double)recallAt[i] / (double) c->num_docs);
+    }
 
 
     sprintf(filename, "%s/inf-gamma.dat", directory);
     save_gamma(filename, var_gamma, c->num_docs);
+
+   
+/**
+    for (d = 0; d < c->num_docs; d++)
+    {
+        document * doc = c->docs[d];
+       
+    }
+    **/
+    perplexity = perplexity/((double) bigTotal);
+    printf("FINAL LOG perplexity %f", perplexity);
+
 
     for (d = 0; d < c->num_docs; d++)
     {

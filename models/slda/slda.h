@@ -51,6 +51,8 @@ typedef struct
  double digamma_sum;
 } digammas;
 
+typedef std::pair<double,int> mypair;
+
 
 typedef struct {
     double * alpha_1; // the parameter for the dirichlet, indexed by word type
@@ -110,7 +112,7 @@ public:
     double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma, int d);
-
+    double doc_perplexity(document* doc, double ** expAlpha, double *** phi);
     void save_gamma(char* filename, double*** gamma, int num_docs);
     void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);
@@ -134,6 +136,8 @@ public:
                         double scaling, const settings * setting);
 
 
+    static bool mComp ( const mypair& l, const mypair& r);
+        
 public:
 
     //double * scaling; // scales prior to match author prolificness
@@ -167,6 +171,8 @@ public:
     int first_run; //different instructions for first run of stochastic 
     // gradient descent
     double top_prior;
+
+
 };
 
 #endif // SLDA_H

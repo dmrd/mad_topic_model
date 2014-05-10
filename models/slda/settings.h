@@ -63,12 +63,11 @@ struct settings
         printf("min iter %d", this->EM_MIN_ITER);
 
          // values hardwired
-        this->SMOOTH_WEIGHT = 1;
+        this->SMOOTH_WEIGHT = .1;
         this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
-        this->TOPIC_SMOOTH = true;
+        this->TOPIC_SMOOTH = false;
         this->STOCHASTIC = false; 
-
 
 
         if (strcmp(alpha_action, "fixed") == 0)
@@ -79,7 +78,7 @@ struct settings
         else
         {
             this->ESTIMATE_ALPHA = 1;
-            printf("alpha is esimated ...\n");
+            printf("alpha is estimated ...\n");
         }
         fclose(fileptr);
         printf("var max iter %d\n", this->VAR_MAX_ITER);
