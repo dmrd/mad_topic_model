@@ -45,7 +45,7 @@
 
 
 
-\title{MAD Style: Multivalence Authorship Detection (MAD) Topic Models for Stylometric Analysis}
+\title{MAD Style: Multivalent Authorship Detection (MAD) Topic Models for Stylometric Analysis}
 
 \author{David Dohan, Charles Marsh, Shubhro Saha, Max Simchowitz}
 \begin{document}
@@ -54,18 +54,35 @@
 \begin{abstract}
 We draw a lot on \citep{Blei2007}.
 \end{abstract}
+
 \section{Introduction}
+
 \section{Literature Review}
+
 \section{Test Corpi}
+
 \section{Feature Extraction}
+
+We incorporated six different stylometric features, each of which was composed into $n$-grams of varying sizes before being fed into the model:
+\begin{enumerate}
+\item Part-of-Speech (POS) tags (e.g., `Noun' for the word ``apple''). The Penn-Treebank tag set was used, and tagging itself was performed using the Maximum Entropy approach of \citet{Ratnaparkhi}.
+\item Etymological tags (e.g., `Old English' for the word ``great''). Etymological information was scraped from \textit{Webster's} Dictionary \citep{Dictionary}. As etymology is inherently root-based, words absent from the dataset were first stemmatized using the method of \citet{Porter} and lemmatized using the WordNet method of \citet{Fellbaum}. If either of the results returned were present in the dictionary, their corresponding etymological tag was returned. Else, the entry with minimum Levenshtein distance was used in-place.
+\item Stress.
+\item Word counts.
+\item Syllable counts.
+\item Syllables.
+\item Meter.
+\end{enumerate}
+
 \section{Methods}
+
 \section{Evaluation}
 
 
 
 \newpage
 \bibliography{writeup}
-\bibliographystyle{abbrv}
+\bibliographystyle{plainnat}
 
 \newpage
 
