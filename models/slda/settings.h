@@ -34,6 +34,9 @@ struct settings
     bool IS_SMOOTHED;
     float SMOOTH_WEIGHT;
     int EM_MIN_ITER;
+    bool TOPIC_SMOOTH;
+    bool STOCHASTIC;
+
 
 
     void read_settings(char* filename)
@@ -63,7 +66,9 @@ struct settings
         this->SMOOTH_WEIGHT = 1;
         this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
-        this->IS_SMOOTHED = 0;
+        this->TOPIC_SMOOTH = true;
+        this->STOCHASTIC = false; 
+
 
 
         if (strcmp(alpha_action, "fixed") == 0)

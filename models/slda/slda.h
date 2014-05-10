@@ -99,7 +99,7 @@ public:
     // mle global computes the dictionary updates
     // mle logistic computes logistic repression updates
     void mle_logistic( std::vector<suffstats *> ss, int eta_update, const settings * setting);
-    void mle_global(vector<suffstats *> ss);
+    void mle_global(vector<suffstats *> ss, double rho, const settings * setting);
 
     void infer_only_2(corpus * c, const settings * setting, const char * directory);
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
@@ -151,6 +151,8 @@ public:
 
     //the log of the topic distribution
     vector< vector < vector < double > > >  log_prob_w;
+    vector< vector < vector < double > > >  lambda;
+
 
     // indexed by word type, then topic, then word
     // softmax regression, in general, there are num_classes-1 etas, we
@@ -161,6 +163,10 @@ public:
     alphas *** as;
     alphas ** as_global;
     digammas *** dg;
+
+    int first_run; //different instructions for first run of stochastic 
+    // gradient descent
+    double top_prior;
 };
 
 #endif // SLDA_H
