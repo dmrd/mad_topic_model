@@ -1,5 +1,5 @@
 CC = g++
-LDFLAGS = -lgsl -lm -lgslcblas
+LDFLAGS = -lgsl -lm -lgslcblas -g
 
 
 LSOURCE = main.cpp corpus.cpp slda.cpp utils.cpp opt.cpp dirichlet.c

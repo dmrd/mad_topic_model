@@ -361,7 +361,7 @@ void slda::updatePrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
 
         for (int a = 0; a < num_classes; a++ )
         {
-            //
+            cout << "author " << a << "\n";
             gsl_matrix * mat = gsl_matrix_alloc(docs_per[a],num_topics[t]);
             gsl_vector * v;
 
@@ -373,11 +373,23 @@ void slda::updatePrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
                 double digsum = dg[t][d]->digamma_sum;
                 std::vector<double> dig = dg[t][d]->digamma_vec;
 
+                double sum = 0; 
                 for (int k = 0; k < num_topics[t]; k++)
-                    gsl_matrix_set(mat, dd, k, exp(dig[k]-digsum));
+                    sum += exp(dig[k]-digsum);
+
+                double frac = 1/((double)num_topics[t]);
+
+
+
+                for (int k = 0; k < num_topics[t]; k++)
+                    gsl_matrix_set(mat, dd, k, sum*(frac+exp(dig[k]-digsum))/(1+sum));
             }
             if(!isSmoothed)
-                v = dirichlet_mle(mat);
+            {
+                // calling grad descent
+               // gsl_vector *(gsl_matrix *D)
+                v = dirichlet_mle_descent(mat);
+            }
 
             else
                 v = dirichlet_mle_s(mat, w, smoothWeight);
@@ -413,7 +425,7 @@ void slda::globalPrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
 
         //non smoothed dirichlet
         if (!isSmoothed)
-            v = dirichlet_mle(mat);
+            v = dirichlet_mle_descent(mat);
 
         //smoothed dirichlet
         else
@@ -469,7 +481,8 @@ void slda::v_em(corpus * c, const settings * setting,
         //  load_model_initialize_ss(ss[t], c);
         //}
     }
-    mle(ss, 0, setting);
+    mle_global(ss);
+    mle_logistic(ss, 0, setting);
 
     // allocate variational parameters
     double *** var_gamma, *** phi, ** lambda;
@@ -521,20 +534,25 @@ void slda::v_em(corpus * c, const settings * setting,
             likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
             for (t=0; t< num_word_types; t++)
             {
-                likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t], ss[t], ETA_UPDATE, d,  t, setting);
+                likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t],
+                 ss[t], ETA_UPDATE, d,  t, 1, setting);
             }
         }
 
-        if (i % 5 == 0)
+        if (i % 3 == 0)
         {
             cout << "calling update prior\n";
             updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
         }
+
         printf("likelihood: %10.10f\n", likelihood);
         // m-st
         printf("**** m-step ****\n");
 
-        mle(ss, ETA_UPDATE, setting);
+        //update dictionary and logistic parameter
+        mle_global(ss);
+        mle_logistic(ss, ETA_UPDATE, setting);
+
 
         // check for convergence
         converged = fabs((likelihood_old - likelihood) / (likelihood_old));
@@ -627,30 +645,9 @@ int slda::vec_index(int t, int l, int k)
     return output;
 }
 
-void slda::mle(std::vector<suffstats *> ss, int eta_update, const settings * setting)
+void slda::mle_logistic(std::vector<suffstats *> ss, int eta_update, const settings * setting)
 {
     int k, w, t;
-
-    for (t = 0; t < num_word_types; t++)
-        for (k = 0; k < num_topics[t]; k++)
-        {
-            for (w = 0; w < size_vocab[t]; w++)
-            {
-                if (ss[t]->word_ss[k][w] > 0)
-                {
-                    log_prob_w[t][k][w] = (double)log(ss[t]->word_ss[k][w]) - log(ss[t]->word_total_ss[k]);
-                }
-                else
-                {
-                    log_prob_w[t][k][w] = -100.0;
-                }
-            }
-        }
-    if (eta_update == 0)
-    {
-        return;
-    }
-
     //the label part goes here
     printf("Maximizing ...\n");
     double f = 0.0;
@@ -719,7 +716,8 @@ void slda::mle(std::vector<suffstats *> ss, int eta_update, const settings * set
 }
 
 double slda::doc_e_step(document* doc, double* gamma, double** phi,
-                        suffstats * ss, int eta_update, int _docNum, int t,const settings * setting)
+                        suffstats * ss, int eta_update, int _docNum, int t,
+                        double scaling, const settings * setting)
 {
     double likelihood = 0.0;
     //if (eta_update == 1)
@@ -739,8 +737,9 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
     {
         for (k = 0; k < num_topics[t]; k++)
         {
-            ss->word_ss[k][doc->words[t][n]] += doc->counts[t][n]*phi[n][k];
-            ss->word_total_ss[k] += doc->counts[t][n]*phi[n][k];
+            // scaling used for stochastic variational inference
+            ss->word_ss[k][doc->words[t][n]] += scaling*doc->counts[t][n]*phi[n][k];
+            ss->word_total_ss[k] += scaling*doc->counts[t][n]*phi[n][k];
 
             //statistics for each document of the supervised part
             ss->z_bar[d].z_bar_m[k] += doc->counts[t][n] * phi[n][k]; //mean
@@ -1726,67 +1725,10 @@ void slda::save_model(const char * filename)
 }
 
 
-
-
-
-
-
-/**
-   void slda::load_model_alpha(const char * filename)
-   {
-
-   }
- **/
-
-
-/**
-   void slda::save_model(const char * filename, int t)
-   {
-   FILE * file = NULL;
-   file = fopen(filename, "wb");
-   //fwrite(&epsilon, sizeof (double), 1, file);
-   fwrite(&num_topics[t], sizeof (int), 1, file);
-   fwrite(&size_vocab[t], sizeof (int), 1, file);
-   fwrite(&num_classes, sizeof (int), 1, file);
-
-   for (int k = 0; k < num_topics[t]; k++)
-   {
-   fwrite(log_prob_w[t][k], sizeof(double), size_vocab[t], file);
-   }
-   if (num_classes > 1)
-   {
-   for (int i = 0; i < num_classes-1; i ++)
-   {
-   fwrite(eta[i], sizeof(double), num_topics[t], file);
-   }
-   }
-
-   fflush(file);
-   fclose(file);
-   }
- **/
-
 //stochastic gradient descent
 
-
-/**
-   int slda::vec_index2(int t, int l, int k, int num_auth)
-   {
-    int output = 0;
-    for (size_t ti = 0; ti < t; ti++) {
-        output += num_auth * (num_topics[ti]);
-    }
-
-    output += l * num_topics[t];
-
-    output += k;
-
-    return output;
-   }
-
-   void slda::mle_stoch(vector<suffstats *> ss, int eta_update, const settings * setting,
-     vector<int> stoch_authors, vector<double> author_prob, vector<int> stoch_docs, vector<double> doc_prob)
-   {
+void slda::mle_global(vector<suffstats *> ss)
+{
     int k, w, t;
 
     for (t = 0; t < num_word_types; t++)
@@ -1800,48 +1742,47 @@ void slda::save_model(const char * filename)
                     log_prob_w[t][k][w] = -100.0;
                 }
             }
-        }
-    if (eta_update == 0) { return; }
-
-
-    //the label part goes here
+        }   
+}
+/**
+// not working. only here for instructive purposes
+void slda::stoch_logistic(vector<suffstats *> ss, const settings * setting,
+    std::vector<double> author_prob, int author_trials,
+    std::vector<double> doc_prob, int doc_trials)
+{
+    
+   //the label part goes here
     printf("Maximizing ...\n");
     double f = 0.0;
     int status;
     int opt_iter;
 
     // the total length of all the eta parameters
-    gsl_rng * rng = gsl_rng_alloc(gsl_rng_taus);
-    time_t seed;
-    time(&seed);
-    gsl_rng_set(rng, (long) seed);
-
     int opt_size = 0;
     for (t = 0; t< num_word_types; t++)
         opt_size += num_topics[t];
-    opt_size = opt_size * stoch_authors.size();
+    opt_size = opt_size * (num_classes-1);
 
-    int l,li;
+    int l;
 
-    //sets minimization param
     stoch_opt_parameter param;
     param.ss = ss;
     param.model = this;
     param.PENALTY = setting->PENALTY;
-    param.stoch_authors = stoch_authors;
-    param.stoch_docs = stoch_docs;
-    param.author_prob = author_prob;
+    param.author_prob = author_prop;
     param.doc_prob = doc_prob;
+    param.author_trials = author_trials;
+    param.doc_trials = doc_trials;
+    param.sample_authors = false;
+    param.rng = gsl_rng_alloc(gsl_rng_taus);
 
-
-    //sets up the minimize
     const gsl_multimin_fdfminimizer_type * T;
     gsl_multimin_fdfminimizer * s;
     gsl_vector * x;
     gsl_multimin_function_fdf opt_fun;
-    opt_fun.f = &softmax_f_stoch;
-    opt_fun.df = &softmax_d_stoch;
-    opt_fun.fdf = &softmax_fdf_stoch;
+    opt_fun.f = &softmax_f;
+    opt_fun.df = &softmax_df;
+    opt_fun.fdf = &softmax_fdf;
     opt_fun.n = opt_size;
     opt_fun.params = (void*)(&param);
     x = gsl_vector_alloc(opt_size);
@@ -1849,14 +1790,9 @@ void slda::save_model(const char * filename)
 
     // allocate the long vector of eta values to be optimized
     for (t = 0; t < num_word_types; t++)
-    {
-        for (li = 0; li < stoch_authors.size(); li ++)
-        {
-            l = stoch_authors[li];
-            for (k = 0; k < num_topics[t]; k ++)
-                gsl_vector_set(x, vec_index2(t,li,k,stoch_authors.size()), eta[t][l][k]);
-        }
-    }
+        for (l = 0; l < num_classes-1; l++)
+            for (k = 0; k < num_topics[t]; k++)
+                gsl_vector_set(x, vec_index(t,l,k), eta[t][l][k]);
 
     T = gsl_multimin_fdfminimizer_vector_bfgs;
     s = gsl_multimin_fdfminimizer_alloc(T, opt_size);
@@ -1865,7 +1801,7 @@ void slda::save_model(const char * filename)
     opt_iter = 0;
     do
     {
-        opt_iter ++;
+        opt_iter++;
         status = gsl_multimin_fdfminimizer_iterate(s);
         if (status)
             break;
@@ -1878,342 +1814,16 @@ void slda::save_model(const char * filename)
     } while (status == GSL_CONTINUE && opt_iter < MSTEP_MAX_ITER);
 
     for (t = 0; t < num_word_types; t++)
-    {
-        for (li = 0; li < stoch_authors.size(); li ++)
-        {
-            l = stoch_authors[li];
-            for (k = 0; k < num_topics[t]; k ++)
-                eta[t][l][k] = gsl_vector_get(s->x, vec_index2(t,li,k,stoch_authors.size()));
-        }
-    }
+        for (l = 0; l < num_classes-1; l++)
+            for (k = 0; k < num_topics[t]; k++)
+                eta[t][l][k] = gsl_vector_get(s->x, vec_index(t,l,k));
+
     gsl_multimin_fdfminimizer_free (s);
     gsl_vector_free (x);
 
     printf("final f: %f\n", f);
-   }
+}
+**/
 
 
 
-   double slda::slda_inference_stoch(document* doc, double ** var_gamma, double *** phi,
-                            alphas *** as, int d, vector<int> stoch_authors, vector<double>
-                            author_prob, const settings * setting)
-   {
-    int k, n, var_iter, l,t,li;
-    int FP_MAX_ITER = 10;
-    int fp_iter = 0;
-
-    double converged = 1, phisum = 0, likelihood = 0, likelihood_old = 0;
-    double t0 = 0.0, ld = 1;
-
-    // fix this
-    double **digamma_gam = new double * [num_word_types];
-    double *sf_aux = new double [stoch_authors.size()];
-
-    for (t = 0; t < num_word_types; t++)
-        digamma_gam[t] = new double [num_topics[t]];
-
-    double sf_val = 0.0;
-    int a = doc->label;
-
-    // compute posterior dirichlet
-    for (t = 0; t < num_word_types; t++)
-    {
-        for (k = 0; k < num_topics[t]; k++)
-        {
-            var_gamma[t][k] = 0;
-            var_gamma[t][k] = as[t][a]->alpha_t[k] + (doc->total[t]/((double) num_topics[t]));
-            digamma_gam[t][k] = digamma(var_gamma[t][k]);
-            for (n = 0; n < doc->length[t]; n++)
-                phi[t][n][k] = 1.0/(double)(num_topics[t]);
-        }
-    }
-
-    for (li = 0; li < stoch_authors.size(); li ++)
-    {
-        sf_aux[li] = 1.0; // the quantity for equation 6 of each class
-        l = stoch_authors[li];
-        ld = author_prob[li];
-
-        for (t = 0; t < num_word_types; t++)
-            for (n = 0; n < doc->length[t]; n ++)
-            {
-                t0 = 0.0;
-                for (k = 0; k < num_topics[t]; k ++)
-                {
-                    t0 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
-                }
-                sf_aux[li] *= t0;
-            }
-    }
-
-    var_iter = 0;
-
-    while ((converged > setting->VAR_CONVERGED) && ((var_iter < setting->VAR_MAX_ITER) || (setting->VAR_MAX_ITER == -1)))
-    {
-        var_iter++;
-
-        for (t = 0; t < num_word_types; t++)
-        {
-            double * sf_params = new double [num_topics[t]];
-            double * oldphi = new double [num_topics[t]];
-
-            for (n = 0; n < doc->length[t]; n++)
-            {
-                //compute sf_params
-                memset(sf_params, 0, sizeof(double)*num_topics[t]);
-
-
-                //in log space
-                for (li = 0; li < stoch_authors.size(); li ++)
-                {
-                    t0 = 0.0;
-                    l = stoch_authors[li];
-                    ld = author_prob[li];
-                    for (k = 0; k < num_topics[t]; k ++)
-                    {
-                        t0 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
-                    }
-                    sf_aux[li] /= t0; //take out word n
-
-                    for (k = 0; k < num_topics[t]; k ++)
-                    {
-                        //h in the paper
-                        sf_params[k] += sf_aux[li]*exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
-                    }
-                }
-
-                for (k = 0; k < num_topics[t]; k++)
-                {
-                    oldphi[k] = phi[t][n][k];
-                }
-
-                for (fp_iter = 0; fp_iter < FP_MAX_ITER; fp_iter ++) //fixed point update
-                {
-                    sf_val = 1.0; // the base class, in log space
-                    for (k = 0; k < num_topics[t]; k++)
-                    {
-                        sf_val += sf_params[k]*phi[t][n][k];
-                    }
-
-                    phisum = 0;
-                    for (k = 0; k < num_topics[t]; k++)
-                    {
-                        phi[t][n][k] = digamma_gam[t][k] + log_prob_w[t][k][doc->words[t][n]];
-
-                        //added softmax parts
-                        if (doc->label < num_classes-1)
-                            phi[t][n][k] += eta[t][doc->label][k]/(double)(doc->total[t]);
-                        phi[t][n][k] -= sf_params[k]/(sf_val*(double)(doc->counts[t][n]));
-
-                        if (k > 0)
-                            phisum = log_sum(phisum, phi[t][n][k]);
-                        else
-                            phisum = phi[t][n][k]; // note, phi is in log space
-                    }
-                    for (k = 0; k < num_topics[t]; k++)
-                    {
-                        phi[t][n][k] = exp(phi[t][n][k] - phisum); //normalize
-                    }
-                }
-                //back to sf_aux value
-                for  (li = 0; li < stoch_authors.size(); li ++)
-                {
-                    l = stoch_authors[li];
-                    ld = author_prob[li];
-                    t0 = 0.0;
-                    for (k = 0; k < num_topics[t]; k ++)
-                    {
-                        t0 += phi[t][n][k] * exp(eta[t][l][k] * doc->counts[t][n]/(double)(doc->total[t]));
-                    }
-                    sf_aux[li] *= t0;
-                }
-                for (k = 0; k < num_topics[t]; k++)
-                {
-                    var_gamma[t][k] = var_gamma[t][k] + doc->counts[t][n]*(phi[t][n][k] - oldphi[k]);
-                    digamma_gam[t][k] = digamma(var_gamma[t][k]);
-                }
-            }
-
-        }
-
-        likelihood = slda_compute_likelihood(doc, phi, var_gamma);
-        assert(!isnan(likelihood));
-        converged = fabs((likelihood_old - likelihood) / likelihood_old);
-        likelihood_old = likelihood;
-
-        // manage this memory
-
-    }
-
-    for (t = 0; t < num_word_types; t++)
-        delete [] digamma_gam[t];
-    delete [] digamma_gam;
-    delete [] sf_aux;
-
-    return likelihood;
-   }
- **/
-
-/**
-   void slda::v_em_stoch(corpus * c, const settings * setting,
-                const char * start, const char * directory)
-   {
-    char filename[100];
-    int * max_length = c->max_corpus_length();
-
-    double likelihood, likelihood_old = 0, converged = 1;
-    int d, n, i, t; // iterates
-    double L2penalty = setting->PENALTY;
-
-    std::vector<int> stoch_authors;
-    std::vector<int> stoch_docs;
-
-    std::vector<double> author_prob;
-    std::vector<double> doc_prob;
-
-
-    printf("initializing ...\n");
-
-    std::vector<suffstats * > ss;
-
-    for (t = 0; t < num_word_types; t++)
-    {
-        ss.push_back(new_suffstats(t));
-
-        random_initialize_ss(ss[t], c,t );
-    }
-    mle(ss, 0, setting);
-
-    // allocate variational parameters
-    double *** var_gamma, *** phi, ** lambda;
-    var_gamma = new double ** [c->num_docs];
-    for (d = 0; d < c->num_docs; d++) {
-        var_gamma[d] = new double * [num_word_types];
-    }
-
-    phi = new double ** [num_word_types];
-    for (t = 0; t < num_word_types; t++)
-    {
-        phi[t] = new double * [max_length[t]];
-        for (d = 0; d < c->num_docs; d++)
-        {
-            var_gamma[d][t] = new double [num_topics[t]];
-            var_gamma[d][t][0] = 0;
-        }
-
-        for (n = 0; n < max_length[t]; n++)
-            phi[t][n] = new double [num_topics[t]];
-    }
-
-
-    FILE * likelihood_file = NULL;
-    sprintf(filename, "%s/likelihood.dat", directory);
-    likelihood_file = fopen(filename, "w");
-
-
-    int ETA_UPDATE = 0;
-
-    i = 0;
-    // CHECK THIS LATER
-    while (((converged < 0) || (converged > setting->EM_CONVERGED) || (i <= LDA_INIT_MAX+2)) && (i <= setting->EM_MAX_ITER))
-    {
-
-        stoch_sample(stoch_authors,stoch_docs, author_prob,doc_prob);
-
-        printf("**** em iteration %d ****\n", ++i);
-        likelihood = 0;
-        for (t = 0; t < num_word_types; t++)
-        {
-            zero_initialize_ss(ss[t],t);
-        }
-        if (i > LDA_INIT_MAX) ETA_UPDATE = 1;
-        // e-step
-        printf("**** e-step ****\n");
-        for (d = 0; d < c->num_docs; d++)
-        {
-            if ((d % 100) == 0) printf("document %d\n", d);
-            likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
-            for (t=0; t< num_word_types; t++) {
-                likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t], ss[t], ETA_UPDATE, d,  t, setting);
-            }
-        }
-
-        updatePrior(var_gamma);
-
-        printf("likelihood: %10.10f\n", likelihood);
-        // m-st
-        printf("**** m-step ****\n");
-
-        mle(ss, ETA_UPDATE, setting);
-
-        // check for convergence
-        converged = fabs((likelihood_old - likelihood) / (likelihood_old));
-        //if (converged < 0) VAR_MAX_ITER = VAR_MAX_ITER * 2;
-        likelihood_old = likelihood;
-
-        // output model and likelihood
-        fprintf(likelihood_file, "%10.10f\t%5.5e\n", likelihood, converged);
-        fflush(likelihood_file);
-        if ((i % LAG) == 0)
-        {
-            sprintf(filename, "%s/%03d.model", directory, i);
-            save_model(filename);
-            sprintf(filename, "%s/%03d.gamma", directory, i);
-            save_gamma(filename, var_gamma, c->num_docs);
-
-            for (t =0; t < num_word_types; t++)
-            {
-                sprintf(filename, "%s/%03d.model.text%i", directory, i,t);
-                save_model_text(filename,t);
-            }
-        }
-    }
-
-
-
-    // output the final model
-    sprintf(filename, "%s/final.model", directory);
-    save_model(filename);
-    sprintf(filename, "%s/final.gamma", directory);
-    //save_gamma(filename, var_gamma, c->num_docs);
-
-    for (t =0; t < num_word_types; t++)
-    {
-        sprintf(filename, "%s/final.model%i.text", directory, t);
-        save_model_text(filename, t);
-    }
-
-    fclose(likelihood_file);
-    FILE * w_asgn_file = NULL;
-    sprintf(filename, "%s/word-assignments.dat", directory);
-    w_asgn_file = fopen(filename, "w");
-    for (d = 0; d < c->num_docs; d ++)
-    {
-        //final inference
-        if ((d % 100) == 0) printf("final e step document %d\n", d);
-
-        likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d ,setting);
-
-        write_word_assignment(w_asgn_file, c->docs[d], phi);
-
-    }
-    fclose(w_asgn_file);
-
-    for (d = 0; d < c->num_docs; d++)
-    {
-        for (t = 0; t < num_word_types; t++)
-            delete [] var_gamma[d][t];
-        delete [] var_gamma[d];
-    }
-    delete [] var_gamma;
-
-    //~std::vector<suffstats *>(ss);
-    for (t = 0; t < num_word_types; t++)
-    {
-        for (n = 0; n < max_length[t]; n++)
-            delete [] phi[t][n];
-        delete [] phi[t];
-    }
-    delete [] phi;
-   }
- **/

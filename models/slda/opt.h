@@ -38,6 +38,20 @@ struct opt_parameter
 	double PENALTY;
 };
 
+
+
+double dr_f(const gsl_vector * x, void * opt_param);
+void dr_df(const gsl_vector * x, void * opt_param, gsl_vector * df);
+void dr_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
+
+struct dr_parameter
+{
+	gsl_vector * log_p;
+	double PENALTY;
+
+};
+
+
 /*
  * function to compute the value of the obj function, then 
  * return it
@@ -60,15 +74,14 @@ void softmax_df(const gsl_vector * x, void * opt_param, gsl_vector * df);
 void softmax_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
 
 
-/**
+
 struct stoch_opt_parameter
 {
-	std::vector<suffstats *> ss;
-	std::vector<int> stoch_authors;
-	std::vector<int> stoch_docs;
+	bool sample_authors;
+	bool sample_docs;
 
 	gsl_rng * rng;
-	int author_trials ;
+	int author_trials;
     int doc_trials;
 
 	std::vector<double> author_prob;
@@ -79,10 +92,10 @@ struct stoch_opt_parameter
 };
 
 //function to compute softmax objective using stochastic sampling
-double softmax_f_stoch(const gsl_vector *, void * opt_param, double * f, gsl_vector * df );
-void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df);
-void softmax_fdf_stoch(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
-**/
+//double softmax_f_stoch(const gsl_vector *, void * opt_param, double * f, gsl_vector * df );
+//void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df);
+//void softmax_fdf_stoch(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df);
+
 
 #endif // OPT_H_INCLUDED
 

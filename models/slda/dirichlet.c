@@ -13,6 +13,10 @@
 #include <gsl/gsl_sf_exp.h>
 #include <stdio.h>
 #include <assert.h>
+#include <iostream>
+#include "opt.h"
+#include <gsl/gsl_multimin.h>
+
 
 double vec_sum(gsl_vector *v) {
     /* Returns vector sum */
@@ -240,8 +244,8 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
      */
     /* Move to args */
     double tol = 1e-7;
-    double maxiter = 100;
     double lambda = 0.01;
+    double maxiter = 1000;
 
     // logp = log(D).mean(axis=0)
     gsl_vector *logp = log_col_mean(D);
@@ -252,7 +256,7 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
     gsl_vector *a0 = gsl_vector_alloc(D->size2);
     gsl_vector_set_all(a0, 1.0);
 
-    double last_ll = loglikelihood(D, a0);
+    //double last_ll = loglikelihood(D, a0);
 
 
     for (int iter = 0; iter < maxiter; iter++) {
@@ -261,7 +265,7 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
         gsl_vector_memcpy(scaled_logp, logp);
         gsl_vector_add_constant(scaled_logp, gsl_sf_psi(vec_sum(a0)));
 
-        gsl_vector *a1 = vec_elementwise_func(scaled_logp, _ipsi);
+//        gsl_vector *a1 = vec_elementwise_func(scaled_logp, _ipsi);
 
         /* Regularization */
         /* gsl_vector *a1_scaled = gsl_vector_alloc(a1->size); */
@@ -270,18 +274,20 @@ gsl_vector *dirichlet_mle(gsl_matrix *D) {
         /* gsl_vector_sub(a1, a1_scaled); */
 
         /* gsl_vector_free(a1_scaled); */
+
+        gsl_vector *a1 = vec_elementwise_func(scaled_logp , _ipsi);
         gsl_vector_free(scaled_logp);
 
         // if abs(loglikelihood(D, a1)-loglikelihood(D, a0)) < tol:
         //     return a1
-        // a0 = a1
+        //a0 = a1
         gsl_vector_free(a0);
-        double this_ll = loglikelihood(D, a1);
-        if (fabs(this_ll - last_ll) < tol) {
-            return a1;
-        }
+        //double this_ll = loglikelihood(D, a1);
+       // if (fabs(this_ll - last_ll) < tol) {
+        //    return a1;
+        //}
         a0 = a1;
-        last_ll = this_ll;
+        //last_ll = this_ll;
     }
     return a0;
 }
@@ -335,3 +341,86 @@ gsl_vector *dirichlet_mle_s(gsl_matrix *D, gsl_vector * w, double weight) {
     }
     return a0;
 }
+
+gsl_vector *dirichlet_mle_descent(gsl_matrix *D) {
+    /*
+     * Iteratively computes the maximum likelihood Dirichlet
+     * distribution given the observed data D.
+     * i.e. the parameters a which maximize p(D | a)
+     *
+     * D: N x K matrix
+     *    N: number of observations
+     *    K: Number of parameters
+     */
+    /* Move to args */
+    double tol = 1e-7;
+    double maxiter = 10000;
+    int status;
+    int opt_iter;
+    double f = 0.0;
+
+
+
+    // logp = log(D).mean(axis=0)
+    gsl_vector *logp = log_col_mean(D);
+
+    // a0 = _init_a(D)
+    gsl_vector *a0 = gsl_vector_alloc(D->size2);
+    gsl_vector_set_all(a0, 1);
+    //_init_a(D);
+
+    dr_parameter param;
+    param.log_p = logp;
+    param.PENALTY = 0;
+
+    const gsl_multimin_fdfminimizer_type * T;
+    gsl_multimin_fdfminimizer * s;
+    gsl_vector * x;
+    gsl_multimin_function_fdf opt_fun;
+    opt_fun.f = &dr_f;
+    opt_fun.df = &dr_df;
+    opt_fun.fdf = &dr_fdf;
+    opt_fun.n = D->size2;
+    opt_fun.params = (void*)(&param);
+    x = gsl_vector_alloc(D->size2);
+
+    for (size_t k = 0; k < D->size2; k++)
+        gsl_vector_set(x, k, a0->data[k]);
+
+    T = gsl_multimin_fdfminimizer_vector_bfgs;
+    s = gsl_multimin_fdfminimizer_alloc(T, D->size2);
+    gsl_multimin_fdfminimizer_set(s, &opt_fun, x, .01, 1e-4);
+
+    opt_iter = 0;
+    do
+    {
+        opt_iter++;
+        status = gsl_multimin_fdfminimizer_iterate(s);
+       
+        if (status)
+        {
+            printf("step: %02d -> f: %f\n", opt_iter-1, f);
+            break;
+        }
+        
+        status = gsl_multimin_test_gradient(s->gradient, 1e-3);
+        //for (int k = 0; k < D->size2; k++)
+
+       
+        if (status == GSL_SUCCESS)
+        {
+           
+            printf("succes step: %02d -> f: %f\n", opt_iter-1, f);
+            break;
+
+        }
+        f = -s->f;
+        //if ((opt_iter-1) % 10 == 0)
+        printf("step: %02d -> f: %f\n", opt_iter-1, f);
+
+    } while (status == GSL_CONTINUE && opt_iter < 4000);
+
+    return x;
+}
+
+

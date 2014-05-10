@@ -61,6 +61,7 @@ struct settings
 
          // values hardwired
         this->SMOOTH_WEIGHT = 1;
+        this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
         this->IS_SMOOTHED = 0;
 

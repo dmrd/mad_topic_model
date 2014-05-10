@@ -59,6 +59,8 @@ typedef struct {
     // fixed to optimization
     double * alpha_t;
 
+    double * phi_total;
+
     double alpha_sum_1;
     double alpha_sum_2;
     double alpha_sum_t;
@@ -93,7 +95,12 @@ public:
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
-    void mle( std::vector<suffstats *> ss, int eta_update, const settings * setting);
+
+    // mle global computes the dictionary updates
+    // mle logistic computes logistic repression updates
+    void mle_logistic( std::vector<suffstats *> ss, int eta_update, const settings * setting);
+    void mle_global(vector<suffstats *> ss);
+
     void infer_only_2(corpus * c, const settings * setting, const char * directory);
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
@@ -118,16 +125,15 @@ public:
     int getDoc(int a, int d);
 
     //stochastic optimization
-    /**
+    //void stoch_logistic(vector<suffstats *> ss, const settings * setting,
+    //    std::vector<double> author_prob, int author_trials,
+    //    std::vector<double> doc_prob, int doc_trials);
+   
+    double doc_e_step(document* doc, double* gamma, double** phi,
+                        suffstats * ss, int eta_update, int _docNum, int t,
+                        double scaling, const settings * setting);
 
-    int vec_index2(int t, int l, int k, int num_auth);
-    void slda::mle_stoch(vector<suffstats *> ss, int eta_update, const settings * setting,
-        vector<int> stoch_authors, vector<double> author_prob, vector<int> stoch_docs, vector<double> doc_prob);
 
-    double slda::slda_inference_stoch(document* doc, double ** var_gamma, double *** phi,
-        alphas *** as, int d, vector<int> stoch_authors, vector<double>
-        author_prob, const settings * setting);
-    **/
 public:
 
     //double * scaling; // scales prior to match author prolificness
