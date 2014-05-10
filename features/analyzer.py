@@ -32,6 +32,17 @@ def cmu_lookup(s, APPROX=True):
             return d[match][0]
         raise
 
+#
+#  Utility methods
+#
+
+
+def to_ngrams(items, n, BODY=False):
+    grams = ngrams(items, n)
+    if BODY:
+        return items, grams
+    return grams
+
 
 #
 #  Part-of-Speech
@@ -53,17 +64,17 @@ def tag_text(text):
     return sum(tag_sentences(text), [])
 
 
-def pos_ngrams(text, n):
+def pos_ngrams(text, n, BODY=False):
     """Extracts POS ngrams for a body of text."""
     pos_tags = [tag for (w, tag) in tag_text(text)]
-    return ngrams(pos_tags, n)
+    return to_ngrams(pos_tags, n, BODY=BODY)
 
 
-def word_ngrams(text, n, PUNC=True):
+def word_ngrams(text, n, PUNC=True, BODY=False):
     def filter(tag):
         return PUNC or not tag in PUNCTUATION_TAGS
     tokenized_text = [t for (t, tag) in tag_text(text) if filter(tag)]
-    return ngrams(tokenized_text, n)
+    return to_ngrams(tokenized_text, n, BODY=BODY)
 
 
 #
@@ -142,7 +153,7 @@ def syllable_counts(text, TOTAL=False):
     return result
 
 
-def syllable_ngrams(text, n):
+def syllable_ngrams(text, n, BODY=False):
     """
     Returns the n-grams of syllable usage by breaking each word down into
     (# syllables) and then taking n-grams on that sequence. In this way,
@@ -151,10 +162,10 @@ def syllable_ngrams(text, n):
     >>> [(1, 1), (1, 4)]
     """
     syllables = syllabic_representation(text)
-    return ngrams(syllables, n)
+    return to_ngrams(syllables, n, BODY=BODY)
 
 
-def syllable_count_ngrams(text, n):
+def syllable_count_ngrams(text, n, BODY=False):
     """
     Returns the n-grams of syllable counts between punctuation. That is,
     it sums (# syllables) for all the words between punctuation marks and
@@ -164,7 +175,7 @@ def syllable_count_ngrams(text, n):
     """
     syllables = syllable_counts(text, TOTAL=True)
     syllables = list(sum(syllables, ()))
-    return ngrams(syllables, n)
+    return to_ngrams(syllables, n, BODY=BODY)
 
 
 def word_counts(text):
@@ -189,13 +200,13 @@ def word_counts(text):
     return result
 
 
-def word_count_ngrams(text, n):
+def word_count_ngrams(text, n, BODY=False):
     """
     Returns the n-grams of word counts between punctuation.
     """
     counts = word_counts(text)
     counts = list(sum(counts, ()))
-    return ngrams(counts, n)
+    return to_ngrams(counts, n, BODY=BODY)
 
 
 def stress_counts_by_syllable(text, SECONDARY=True):
@@ -232,9 +243,9 @@ def etymology_representation(text):
     return map(e.lookup, text)
 
 
-def etymology_ngrams(text, n):
+def etymology_ngrams(text, n, BODY=False):
     representation = etymology_representation(text)
-    return ngrams(representation, n)
+    return to_ngrams(representation, n, BODY=BODY)
 
 
 def etymology_frequencies(text, n):
