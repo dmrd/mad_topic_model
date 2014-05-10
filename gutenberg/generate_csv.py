@@ -8,10 +8,10 @@ import csv
 DATA_FOLDER = "data"
 
 # number of excerpts per author
-EXCERPTS_PER_AUTHOR = 10
+EXCERPTS_PER_AUTHOR = 50
 
 # excerpt size in lines
-EXCERPT_SIZE = 30
+EXCERPT_SIZE = 80
 
 # only look at files with the author's name and nothing else
 file_names = [x for x in os.listdir(DATA_FOLDER) if ".txt" in x and "_small" not in x]
