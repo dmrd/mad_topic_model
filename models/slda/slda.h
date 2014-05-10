@@ -112,7 +112,7 @@ public:
     double slda_inference(document* doc, double** var_gamma, double*** phi,
       alphas *** as, int d, const settings * setting);
     double slda_compute_likelihood(document* doc, double*** phi, double** var_gamma, int d);
-
+    double doc_perplexity(document* doc, double ** expAlpha, double *** phi);
     void save_gamma(char* filename, double*** gamma, int num_docs);
     void write_word_assignment(FILE* f, document* doc, double*** phi);
     void init_alpha(double epsilon2);

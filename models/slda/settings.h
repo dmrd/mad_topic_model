@@ -70,7 +70,6 @@ struct settings
         this->STOCHASTIC = false; 
 
 
-
         if (strcmp(alpha_action, "fixed") == 0)
         {
             this->ESTIMATE_ALPHA = 0;
@@ -79,7 +78,7 @@ struct settings
         else
         {
             this->ESTIMATE_ALPHA = 1;
-            printf("alpha is esimated ...\n");
+            printf("alpha is estimated ...\n");
         }
         fclose(fileptr);
         printf("var max iter %d\n", this->VAR_MAX_ITER);

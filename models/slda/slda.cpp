@@ -598,6 +598,7 @@ void slda::v_em(corpus * c, const settings * setting,
     FILE * w_asgn_file = NULL;
     sprintf(filename, "%s/word-assignments.dat", directory);
     w_asgn_file = fopen(filename, "w");
+    
     for (d = 0; d < c->num_docs; d++)
     {
         //final inference
@@ -605,10 +606,10 @@ void slda::v_em(corpus * c, const settings * setting,
             printf("final e step document %d\n", d);
 
         likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as, d,setting);
-
         write_word_assignment(w_asgn_file, c->docs[d], phi);
 
     }
+    //printf("FINAL LOG perplexity %f", perplexity);
 
     fclose(w_asgn_file);
 
@@ -834,19 +835,34 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
 
     return (likelihood);
 }
-/**
-double slda::doc_perplexity(document* doc, double ** var gamma, )
+
+double slda::doc_perplexity(document* doc, double ** expAlpha, double *** phi)
 {
     int k, n, l, t;
+    double perplexity = 0;
+
     for (t = 0; t < num_word_types; t++)
     {
         for (n = 0; n < doc->length[t]; n++)
         {
-
+            double temp = 0;
+            temp= log_prob_w[t][0][doc->words[t][n]] + phi[t][n][0];
+            for (k = 1; k < num_topics[t]; k++)      
+            {
+                temp = log_sum(temp, log_prob_w[t][0][doc->words[t][n]] + phi[t][n][0]); 
+            }
+            perplexity+=temp;
         }
+        
+        for (k = 0; k < num_topics[t]; k++)
+            perplexity+= doc->length[t]*expAlpha[t][k];
     }
+    return perplexity;
 }
 
+
+
+/**
 double slda::auth_perplexity(document* doc, double ** var gamma, )
 {
     int k, n, l, t;
@@ -1144,6 +1160,27 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
     sprintf(filename, "%s/inf-labels.dat", directory);
     inf_label_file = fopen(filename, "w");
 
+    double perplexity=0;
+    int bigTotal=0;
+
+    double *** expAlpha = new double ** [num_classes];
+
+    for (i = 0; i < num_classes; i++)
+    {
+        expAlpha[i] =  new double *[num_word_types];
+        for (t = 0; t < num_word_types; t++)
+        {
+            expAlpha[i][t] = new double [num_topics[t]];
+
+            double psi_sum = digamma(as[t][i]->alpha_sum_t);
+            for (k = 0; k < num_topics[t]; k++)
+            {
+                expAlpha[i][t][k] = digamma(as[t][i]->alpha_t[k]) - psi_sum;
+            }
+        }
+    }
+
+
     for (d = 0; d < c->num_docs; d++)
     {
         if ((d % 100) == 0)
@@ -1151,6 +1188,7 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
         document * doc = c->docs[d];
         likelihood = 0;
+
         for (t = 0; t < num_word_types; t++)
         {
 
@@ -1169,6 +1207,11 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
                 phi_m[t][k] /= (double)(doc->total[t]);
             }
         }
+
+        perplexity += doc_perplexity(doc, expAlpha[doc->label], phi);
+        // sum of total words
+        for (t = 0; t < num_word_types; t++)
+            bigTotal+= doc->total[t];
 
         //do classification
 
@@ -1223,6 +1266,18 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
     sprintf(filename, "%s/inf-gamma.dat", directory);
     save_gamma(filename, var_gamma, c->num_docs);
+
+   
+/**
+    for (d = 0; d < c->num_docs; d++)
+    {
+        document * doc = c->docs[d];
+       
+    }
+    **/
+    perplexity = perplexity/((double) bigTotal);
+    printf("FINAL LOG perplexity %f", perplexity);
+
 
     for (d = 0; d < c->num_docs; d++)
     {
