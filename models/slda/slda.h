@@ -51,6 +51,8 @@ typedef struct
  double digamma_sum;
 } digammas;
 
+typedef std::pair<double,int> mypair;
+
 
 typedef struct {
     double * alpha_1; // the parameter for the dirichlet, indexed by word type
@@ -134,6 +136,8 @@ public:
                         double scaling, const settings * setting);
 
 
+    static bool mComp ( const mypair& l, const mypair& r);
+        
 public:
 
     //double * scaling; // scales prior to match author prolificness
@@ -167,6 +171,8 @@ public:
     int first_run; //different instructions for first run of stochastic 
     // gradient descent
     double top_prior;
+
+
 };
 
 #endif // SLDA_H

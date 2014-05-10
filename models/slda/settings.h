@@ -63,10 +63,10 @@ struct settings
         printf("min iter %d", this->EM_MIN_ITER);
 
          // values hardwired
-        this->SMOOTH_WEIGHT = 1;
+        this->SMOOTH_WEIGHT = .1;
         this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
-        this->TOPIC_SMOOTH = true;
+        this->TOPIC_SMOOTH = false;
         this->STOCHASTIC = false; 
 
 
