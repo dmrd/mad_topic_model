@@ -22,7 +22,7 @@ except:
 
 NTYPES = 6
 
-os.system("make -C ../models/slda clean && make -C ../models/slda")
+#os.system("make -C ../models/slda clean && make -C ../models/slda")
 os.system("mkdir output/{n} output/{n}/models output/{n}/data".format(n=data_name))
 os.system("rm -f output/{n}/models/* output/{n}/data/*".format(n=data_name))
 os.system("sh copy_ngrams.sh ../slda_input_files/{n} output/{n}/data/{n} {min_doc}".format(n=data_name,

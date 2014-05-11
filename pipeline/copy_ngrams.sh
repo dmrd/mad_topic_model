@@ -4,10 +4,10 @@
 
 # Copy over files
 cp $1_etymology_4_author.txt $2_labels
-cp $1_etymology_4_model.txt $2_0
-cp $1_meter_4_model.txt $2_1
-cp $1_pos_4_model.txt $2_2
-cp $1_syllable_4_model.txt $2_3
+cp $1_pos_4_model.txt $2_0
+cp $1_syllable_4_model.txt $2_1
+cp $1_etymology_4_model.txt $2_2
+cp $1_meter_4_model.txt $2_3
 cp $1_syllable_count_4_model.txt $2_4
 cp $1_word_count_4_model.txt $2_5
 

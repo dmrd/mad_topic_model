@@ -18,7 +18,7 @@ from sklearn.cross_validation import KFold, StratifiedKFold
 print(sys.argv)
 
 prefix = sys.argv[1]
-n_types = int(sys.argv[2])  # 0.5
+n_types = int(sys.argv[2])  # Number of ngram types (usually 6)
 folds = int(sys.argv[3])  # Number of folds to use
 
 # Files that need loading
