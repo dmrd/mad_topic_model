@@ -16,7 +16,7 @@ nfolds = int(sys.argv[3])
 ntopics = int(sys.argv[4])
 
 
-NTYPES = 1
+NTYPES = 6
 
 
 os.system("mkdir output/{n} output/{n}/models output/{n}/data".format(n=data_name))
@@ -58,6 +58,12 @@ for fold in range(nfolds):
     os.system(estimate)
 
     print("**************** Testing ****************")
-    infer = ' '.join(slda_inf).format(n=data_name, tt='train', fold=fold, types=NTYPES)
+    infer = ' '.join(slda_inf).format(n=data_name, tt='test', fold=fold, types=NTYPES)
     print(infer)
     os.system(infer)
+
+
+print("\n\n\n**************** RESULTS ****************\n")
+for fold in range(nfolds):
+    print("**** Fold {} results ****".format(fold))
+    os.system("tail -n5 output/{n}/models/{fold}/inf-labels.dat".format(n=data_name, fold=fold))

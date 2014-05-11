@@ -399,7 +399,7 @@ gsl_vector *dirichlet_mle_descent(gsl_matrix *D) {
        
         if (status)
         {
-            printf("step: %02d -> f: %f\n", opt_iter-1, f);
+            //printf("step: %02d -> f: %f\n", opt_iter-1, f);
             break;
         }
         
@@ -410,13 +410,14 @@ gsl_vector *dirichlet_mle_descent(gsl_matrix *D) {
         if (status == GSL_SUCCESS)
         {
            
-            printf("succes step: %02d -> f: %f\n", opt_iter-1, f);
+            //printf("succes step: %02d -> f: %f\n", opt_iter-1, f);
             break;
 
         }
         f = -s->f;
-        if ((opt_iter-1) % 10 == 0)
-            printf("step: %02d -> f: %f\n", opt_iter-1, f);
+        //if ((opt_iter-1) % 10 == 0)
+
+            //printf("step: %02d -> f: %f\n", opt_iter-1, f);
 
     } while (status == GSL_CONTINUE && opt_iter < 4000);
 

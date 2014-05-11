@@ -253,6 +253,17 @@ suffstats * slda::new_suffstats(int t)
 }
 
 
+void slda::zero_initialize_word(suffstats * ss, int t)
+{
+    //memset(ss->word_total_ss, 0, sizeof(double)*num_topics[t]);
+    ss->word_total_ss.assign(num_topics[t],0);
+    for (int k = 0; k < num_topics[t]; k++)
+    {
+        ss->word_ss[k].assign(size_vocab[t],0);
+        //memset(ss->word_ss[k], 0, sizeof(double)*size_vocab[t]);
+    }
+}
+
 /*
  * initialize the sufficient statistics with zeros
  */
@@ -383,7 +394,6 @@ void slda::updatePrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
                 double frac = 1/((double)num_topics[t]);
 
 
-
                 for (int k = 0; k < num_topics[t]; k++)
                     gsl_matrix_set(mat, dd, k, sum*(frac+exp(dig[k]-digsum))/(1+sum));
             }
@@ -414,39 +424,50 @@ void slda::globalPrior(double *** var_gamma, bool isSmoothed, double smoothWeigh
 {
     for (int t = 0; t < num_word_types; t++)
     {
-
-       //compute sufficient statistics
-        gsl_vector *v;
-        gsl_matrix * mat = gsl_matrix_alloc(num_docs,num_topics[t]);
-
-        // fill in sufficient statistics
-        for (int d = 0; d < num_docs; d++ )
+        // used for smoothing
+        gsl_vector * w;
+        if (isSmoothed)
         {
-            for (int k = 0; k < num_topics[t]; k++)
-                gsl_matrix_set(mat, d,k, var_gamma[t][d][k]);
-        }
-
-        //non smoothed dirichlet
-        if (!isSmoothed)
-            v = dirichlet_mle_descent(mat);
-
-        //smoothed dirichlet
-        else
-        {
-            gsl_vector *w = gsl_vector_alloc(num_topics[t]);
+            w = gsl_vector_alloc(num_topics[t]);
             for (int k = 0; k < num_topics[t]; k++)
                 gsl_vector_set(w, k, 1/((double)(num_topics[t])));
-            v = dirichlet_mle_s(mat, w, smoothWeight);
         }
+        gsl_matrix * mat = gsl_matrix_alloc(num_docs,num_topics[t]);
+            gsl_vector * v;
+
+        for (int d = 0; d < num_docs; d++ )
+        {
+            // digamma of sum
+            double digsum = dg[t][d]->digamma_sum;
+            std::vector<double> dig = dg[t][d]->digamma_vec;
+
+            double sum = 0; 
+            for (int k = 0; k < num_topics[t]; k++)
+                sum += exp(dig[k]-digsum);
+
+            double frac = 1/((double)num_topics[t]);
+
+
+            for (int k = 0; k < num_topics[t]; k++)
+                gsl_matrix_set(mat, d, k, sum*(frac+exp(dig[k]-digsum))/(1+sum));
+        }
+        if(!isSmoothed)
+        {
+            v = dirichlet_mle_descent(mat);
+        }
+
+        else
+            v = dirichlet_mle_s(mat, w, smoothWeight);
 
         // fill in values
         double sum  = 0;
         for (int k = 0; k < num_topics[t]; k++)
         {
-            as_global[t]->alpha_t[k] = gsl_vector_get(v, k);
+            as_global[t]->alpha_t[k] = gsl_vector_get (v, k);
             sum += as_global[t]->alpha_t[k];
         }
         as_global[t]->alpha_sum_t = sum;
+        
     }
 }
 
@@ -477,8 +498,9 @@ void slda::v_em(corpus * c, const settings * setting,
         //other forms of initialization supported in original code
     }
 
-    mle_global(ss, 0, setting);
-    mle_logistic(ss, 0, setting);
+    double rho = 1;
+    mle_global(ss, rho, setting);
+    mle_logistic(ss, rho, setting);
 
     // allocate variational parameters
     double *** var_gamma, *** phi, ** lambda;
@@ -510,10 +532,13 @@ void slda::v_em(corpus * c, const settings * setting,
     int ETA_UPDATE = 0;
 
     i = 0;
+    first_run = -1;
+    double scaling = (double)(c->num_docs)/((double)setting->BATCH_SIZE);
+
     while (((converged < 0) || (converged > setting->EM_CONVERGED || i <= setting->EM_MAX_ITER) || (i <= LDA_INIT_MAX+2)) && (i <= setting->EM_MAX_ITER))
     {
+
         printf("**** em iteration %d ****\n", ++i);
-        likelihood = 0;
         for (t = 0; t < num_word_types; t++)
         {
             zero_initialize_ss(ss[t],t);
@@ -522,14 +547,48 @@ void slda::v_em(corpus * c, const settings * setting,
             ETA_UPDATE = 1;
         // e-step
         printf("**** e-step ****\n");
-        if (false) //(setting->STOCHASTIC)
+        if ( setting->STOCHASTIC && i % 2 != 0 && i!=1)
         {
-            return;
-
-            first_run = -1;
+            //return;
+            printf("STOCHASTIC\n");
+            likelihood = 0;
+            for (size_t iii = 0; iii < setting->BIG_BATCH_SIZE; iii ++)
+            {
+                //printf("BIG LOOP\n");
+                for (t = 0; t < num_word_types; t++)
+                {
+                    zero_initialize_ss(ss[t],t);
+                }
+                std::vector<int> v;
+                //sample docs
+                for (size_t id = 0; id <setting->BATCH_SIZE;id++)
+                {
+                    v.push_back(gsl_rng_uniform_int(rng, c->num_docs));
+                }
+                for (size_t id = 0; id < setting->BATCH_SIZE; id++)
+                {
+                    d = v[id];
+                    //if ((d % 100) == 0)
+                    //    printf("document %d\n", d);
+                    likelihood += slda_inference(c->docs[d], var_gamma[d], phi, as,  d, setting);
+                    for(t=0; t< num_word_types; t++)
+                    {
+                        likelihood += doc_e_step(c->docs[d], var_gamma[d][t], phi[t],
+                        ss[t], ETA_UPDATE, d,  t, 1, setting);
+                    }
+                }
+               
+                rho = (1/pow(1+10*i+iii,0.6));
+                 //update dictionary and logistic parameter
+                mle_global(ss, rho, setting);
+                //mle_logistic(ss, rho, setting);
+            }
+            double scalar = ((double) c->num_docs)/((double)setting->BIG_BATCH_SIZE);
+            likelihood = likelihood/((double)setting->BATCH_SIZE)*scalar;
         }
         else
         {
+            likelihood = 0;
             for (d = 0; d < c->num_docs; d++)
             {
                 if ((d % 100) == 0)
@@ -544,8 +603,17 @@ void slda::v_em(corpus * c, const settings * setting,
             likelihood-=add_penalty(setting);
 
         }
+        if (setting->STOCHASTIC)
+        {
+            if (i % 3 == 0 && setting->ESTIMATE_ALPHA)
+            {
+                cout << "calling update prior\n";
+                updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+            }
 
-        if (i % 3 == 0 && setting->ESTIMATE_ALPHA)
+        }
+
+        else if (i % 3 == 0 && setting->ESTIMATE_ALPHA)
         {
             cout << "calling update prior\n";
             updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
@@ -556,8 +624,8 @@ void slda::v_em(corpus * c, const settings * setting,
         printf("**** m-step ****\n");
 
         //update dictionary and logistic parameter
-        mle_global(ss, 0, setting);
-        mle_logistic(ss, ETA_UPDATE, setting);
+        mle_global(ss, rho, setting);
+        mle_logistic(ss, rho, setting);
 
 
         // check for convergence
@@ -583,7 +651,7 @@ void slda::v_em(corpus * c, const settings * setting,
     if (setting->ESTIMATE_ALPHA)
     {
         updatePrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
-        //globalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
+        globalPrior(var_gamma, setting->IS_SMOOTHED, setting->SMOOTH_WEIGHT);
     }
     // output the final model
     sprintf(filename, "%s/final.model", directory);
@@ -660,6 +728,8 @@ void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setti
 {
     int k, w, t;
 
+    //printf("rho! %f",rho);
+
     for (t = 0; t < num_word_types; t++)
         for (k = 0; k < num_topics[t]; k++)
         {
@@ -667,7 +737,7 @@ void slda::mle_global(vector<suffstats *> ss, double rho, const settings * setti
             {
                 //cout << "SMOOTH TOPICS \n";
                 //not stochastic
-                if (!setting->STOCHASTIC || first_run != 1)
+                if (!setting->STOCHASTIC || first_run == 1)
                     for (w = 0; w < size_vocab[t]; w++)
                     {
                         lambda[t][k][w] = top_prior + ss[t]->word_ss[k][w];
@@ -741,10 +811,18 @@ void slda::mle_logistic(std::vector<suffstats *> ss, double rho, const settings 
     gsl_vector * x;
 
 
-    if (setting->STOCHASTIC)
+    if (false) // (setting->STOCHASTIC)
     {
         //initialize the stochastic elements 
-        stoch_opt_parameter par2;
+         gsl_rng * rng = gsl_rng_alloc(gsl_rng_taus);
+        time_t seed;
+        time(&seed);
+        gsl_rng_set(rng, (long) seed);
+            stoch_opt_parameter par2;
+
+        if (first_run == 1)
+            rho = 1;
+
         par2.op = &param;
         // loop over batches?
         gsl_vector * df = gsl_vector_alloc(opt_size);
@@ -856,6 +934,13 @@ double slda::doc_e_step(document* doc, double* gamma, double** phi,
     int a = doc->label;
 
     // update sufficient statistics
+
+    int num_var_entries = num_topics[t]*(num_topics[t]+1)/2;
+    if (setting->STOCHASTIC)
+    {
+        memset(ss->z_bar[d].z_bar_m, 0, sizeof(double)*num_topics[t]);
+        memset(ss->z_bar[d].z_bar_var, 0, sizeof(double)*num_var_entries);
+    }
 
     for (n = 0; n < doc->length[t]; n++)
     {
@@ -1203,10 +1288,14 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
         phi[t] = new double * [max_length[t]];
         for (d = 0; d < c->num_docs; d++)
+        {    
             var_gamma[d][t] = new double [num_topics[t]];
+        }
 
         for (n = 0; n < max_length[t]; n++)
+        {
             phi[t][n] = new double [num_topics[t]];
+        }
     }
 
     FILE * likelihood_file = NULL;
@@ -1310,29 +1399,24 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
         }
 
         fprintf(likelihood_file, "%5.5f\n", likelihood);
+        //printf( "%5.5f\n", likelihood);
         fprintf(inf_label_file, "%d\n", label);
     }
 
     printf("average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
+    fprintf(inf_label_file,"average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
+
     for (i = 0; i < recallAt.size(); i++)
     {
+        fprintf(inf_label_file,"recall at %d: %.3f\n", i+1, (double)recallAt[i] / (double) c->num_docs);
         printf("recall at %d: %.3f\n", i+1, (double)recallAt[i] / (double) c->num_docs);
     }
 
-
     sprintf(filename, "%s/inf-gamma.dat", directory);
     save_gamma(filename, var_gamma, c->num_docs);
-
-   
-/**
-    for (d = 0; d < c->num_docs; d++)
-    {
-        document * doc = c->docs[d];
-       
-    }
-    **/
-    perplexity = perplexity/((double) bigTotal);
-    printf("FINAL LOG perplexity %f", perplexity);
+    perplexity = -1*perplexity/((double) bigTotal);
+    printf("log perplexity %f", perplexity);
+    fprintf(inf_label_file,"log perplexity %f\n", perplexity);
 
 
     for (d = 0; d < c->num_docs; d++)
@@ -1365,6 +1449,13 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
     int label, var_iter;
     int num_correct = 0;
 
+    init_dg(c->num_docs);
+
+    std::vector<int> recallAt;
+    for (i = 0; i < 2; i++)
+        recallAt.push_back(0);
+    if (num_classes > 2)
+        recallAt.push_back(0);
 
     char filename[100];
     int * max_length = c->max_corpus_length();
@@ -1373,8 +1464,8 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
 
     // allocate variational parameters
     var_gamma = new double ** [c->num_docs];
-    for (t = 0; t < num_word_types; t++)
-        var_gamma[t] = new double * [num_word_types];
+    for (d = 0; d < c-> num_docs; d++)
+        var_gamma[d] = new double * [num_word_types];
 
     phi = new double ** [num_word_types];
     phi_m = new double * [num_word_types];
@@ -1385,10 +1476,18 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
 
         phi[t] = new double * [max_length[t]];
         for (d = 0; d < c->num_docs; d++)
+        {
             var_gamma[d][t] = new double [num_topics[t]];
+            for (k = 0; k < num_topics[t]; k++)
+                var_gamma[d][t][k] = 0;
+        }
 
         for (n = 0; n < max_length[t]; n++)
+        {
             phi[t][n] = new double [num_topics[t]];
+            for (k = 0; k < num_topics[t]; k++)
+                phi[t][n][k] = 0;
+        }
     }
 
     FILE * likelihood_file = NULL;
@@ -1437,24 +1536,66 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
             gsl_vector_set(lkhoods, a, likelihood);
 
         }
-        //do classification
-        // find label maximizing posterior
+
+        doc->label = true_label;     //reset original document label
+
         int label = gsl_vector_max_index(lkhoods);
+        std::vector<mypair> labels;
+        label = 0;
+        
+        base_score  = lkhoods->data[0];
+        for (i = 0; i < num_classes-1; i++)
+        {
+            score =lkhoods->data[i];
+
+            labels.push_back(mypair(score,i));
+
+            if (score > base_score)
+            {
+                base_score = score;
+                label = i;
+            }
+        }
+
+        if (label == doc->label)
+            num_correct++;
+
+        //sort labels by score
+        std::sort(labels.begin(), labels.end(), mComp);
+        for (size_t i1 = 0; i1 < recallAt.size(); i1++)
+        {
+            // if a label is correct, then recall at i2>=i1 is incremented
+            if (labels[i1].second == doc->label)
+            {
+                for (size_t i2 = i1; i2 < recallAt.size(); i2++)
+                    recallAt[i2]++;
+                break;
+            }
+        }
 
         if (label == true_label)
             num_correct++;
 
-        doc->label = true_label;     //reset original document label
+        fprintf(likelihood_file, "likelihood: %5.5f\n", likelihood);
 
-        fprintf(likelihood_file, "%5.5f\n", likelihood);
         fprintf(inf_label_file, "%d\n", label);
     }
 
-    printf("average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
 
+    printf("average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
+    fprintf(inf_label_file,"average accuracy: %.3f\n", (double)num_correct / (double) c->num_docs);
+
+    for (i = 0; i < recallAt.size(); i++)
+    {
+        fprintf(inf_label_file,"recall at %d: %.3f\n", i+1, (double)recallAt[i] / (double) c->num_docs);
+        printf("recall at %d: %.3f\n", i+1, (double)recallAt[i] / (double) c->num_docs);
+    }
 
     sprintf(filename, "%s/inf-gamma.dat", directory);
     save_gamma(filename, var_gamma, c->num_docs);
+    //perplexity = -1*perplexity/((double) bigTotal);
+    //printf("log perplexity %f", perplexity);
+    //fprintf(inf_label_file,"log perplexity %f\n", perplexity);
 
     for (d = 0; d < c->num_docs; d++)
     {
@@ -1949,6 +2090,11 @@ void slda::save_model(const char * filename)
 
     fflush(file);
     fclose(file);
+}
+
+double get_rho(int i)
+{
+    return (1/pow(1+i,0.6));
 }
 
 
