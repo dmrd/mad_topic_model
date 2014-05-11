@@ -1,3 +1,5 @@
+slda_input_files/termite_files/*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

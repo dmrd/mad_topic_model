@@ -1502,11 +1502,10 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
     converged = 99;
 
 
-    // for each document
     for (d = 0; d < c->num_docs; d++)
     {
-        if ((d % 100) == 0)
-            printf("document %d\n", d);
+        //if ((d % 100) == 0)
+         //   printf("document %d\n", d);
 
         // store documents actual label
         document * doc = c->docs[d];
@@ -1542,8 +1541,8 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
         int label = gsl_vector_max_index(lkhoods);
         std::vector<mypair> labels;
         label = 0;
-        
         base_score  = lkhoods->data[0];
+
         for (i = 0; i < num_classes-1; i++)
         {
             score =lkhoods->data[i];
@@ -1572,9 +1571,6 @@ void slda::infer_only_2(corpus * c, const settings * setting, const char * direc
                 break;
             }
         }
-
-        if (label == true_label)
-            num_correct++;
 
         fprintf(likelihood_file, "likelihood: %5.5f\n", likelihood);
 
