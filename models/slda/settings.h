@@ -40,6 +40,7 @@ struct settings
     bool STOCHASTIC;
     bool USE_L1;
     double L1_PENALTY;
+    bool ONE_TOPIC;
 
     void read_settings(char* filename)
     {
@@ -49,6 +50,8 @@ struct settings
         int smoothed_int;
         BATCH_SIZE = 4;
         BIG_BATCH_SIZE = 10;
+        ONE_TOPIC = false;
+
 
         fileptr = fopen(filename, "r");
         fscanf(fileptr, "var max iter %d\n", &this->VAR_MAX_ITER);
@@ -63,7 +66,7 @@ struct settings
         fscanf(fileptr, "var min iter %d\n", &this->EM_MIN_ITER);
 
         USE_L1 = false;
-        L1_PENALTY = 0;//.01;
+        L1_PENALTY = 0;// .01; //.01;
         // read in not working
         printf("smoothed, %d", smoothed_int);
         printf("min iter %d", this->EM_MIN_ITER);
@@ -83,9 +86,10 @@ struct settings
         }
         else
         {
-            this->ESTIMATE_ALPHA = 1;
+            this->ESTIMATE_ALPHA = 0;// 1;
             printf("alpha is estimated ...\n");
         }
+        this->ESTIMATE_ALPHA = 1;
         fclose(fileptr);
         printf("var max iter %d\n", this->VAR_MAX_ITER);
         printf("var convergence %.2E\n", this->VAR_CONVERGED);

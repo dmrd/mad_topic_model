@@ -78,8 +78,8 @@ public:
     void init(double epsilon2, int * num_topics_, const corpus * c);
     void v_em(corpus * c, const settings * setting,
               const char * start, const char * directory);
-    void updatePrior(double *** var_gamma, bool is_smoothed, double weight);
-    void globalPrior(double *** var_gamma, bool is_smoothed, double weight);
+    void updatePrior(double *** var_gamma, const settings * setting);
+    void globalPrior(double *** var_gamma, const settings * setting);
     void fitDirichlet(gsl_matrix * mat);
 
 
@@ -109,6 +109,8 @@ public:
     double doc_e_step(document* doc, double* gamma, double** phi, suffstats * ss,
      int eta_update, int _docNum, int t, const settings * setting);
 
+    double slda_inference_1(document* doc, double ** var_gamma, double *** phi,
+                            alphas *** as, int d, const settings * setting);
     double lda_inference(document* doc, double* var_gamma, double** phi, const settings * setting, int t, int a);
     double lda_compute_likelihood(document* doc, double** phi, double* var_gamma, int t, int a);
     double slda_inference(document* doc, double** var_gamma, double*** phi,
