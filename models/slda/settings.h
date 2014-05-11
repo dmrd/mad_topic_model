@@ -27,6 +27,8 @@ struct settings
 {
     float VAR_CONVERGED;
     int   VAR_MAX_ITER;
+    int BATCH_SIZE;
+    int BIG_BATCH_SIZE;
     float EM_CONVERGED;
     int   EM_MAX_ITER;
     int   ESTIMATE_ALPHA;
@@ -39,14 +41,14 @@ struct settings
     bool USE_L1;
     double L1_PENALTY;
 
-
-
     void read_settings(char* filename)
     {
         FILE * fileptr;
         char alpha_action[100];
 
         int smoothed_int;
+        BATCH_SIZE = 4;
+        BIG_BATCH_SIZE = 10;
 
         fileptr = fopen(filename, "r");
         fscanf(fileptr, "var max iter %d\n", &this->VAR_MAX_ITER);
@@ -70,7 +72,7 @@ struct settings
         this->SMOOTH_WEIGHT = .1;
         this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
-        this->TOPIC_SMOOTH = false;
+        this->TOPIC_SMOOTH = false;//false;
         this->STOCHASTIC = false; 
 
 
