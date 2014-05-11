@@ -1,9 +1,9 @@
 var max iter 50
 var convergence 1e-3
-em max iter 50
+em max iter 25
 em convergence 1e-4
 L2 penalty 0.01
-alpha not fixed
+alpha fixed
 smoothed 1
 smooth weight 1e0
 em min iter 10

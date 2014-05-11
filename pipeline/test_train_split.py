@@ -13,12 +13,12 @@ This is hacky but works for what we need
 
 import sys
 import os
-import random
-from sklearn.cross_validation import KFold
+import numpy as np
+from sklearn.cross_validation import KFold, StratifiedKFold
 print(sys.argv)
 
 prefix = sys.argv[1]
-n_types = int(sys.argv[2])  # 0.5
+n_types = int(sys.argv[2])  # Number of ngram types (usually 6)
 folds = int(sys.argv[3])  # Number of folds to use
 
 # Files that need loading
@@ -33,13 +33,12 @@ for filename in files:
 # Make sure all input has same # lines
 assert(all(len(x) == len(lines[0]) for x in lines))
 
-# Generate permutation and shuffle lines
-permutation = list(range(len(lines[0])))
-random.shuffle(permutation)
+labels = np.array(map(lambda x: int(x.strip()), lines[0]))
 
-
-for fid, (test, train) in enumerate(KFold(len(lines[0]), n_folds=folds,
-                                          shuffle=True)):
+# for fid, (test, train) in enumerate(KFold(len(lines[0]), n_folds=folds,
+#                                           shuffle=True)):
+for fid, (test, train) in enumerate(StratifiedKFold(labels,
+                                                    n_folds=folds)):
     test_fold = []
     train_fold = []
     for doc in lines:

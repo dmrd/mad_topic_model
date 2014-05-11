@@ -16,7 +16,7 @@ import numpy as np
 from collections import defaultdict
 
 def generate_documents(n_authors, n_topics, n_docs, n_words,
-                       n_words_per_doc):
+                       n_words_per_doc, divider=1.0):
     """
     Implements generative process for LDA
 
@@ -28,9 +28,9 @@ def generate_documents(n_authors, n_topics, n_docs, n_words,
     # Generate author dirichlet distributions over topics
     author_p = []
     for _ in range(n_authors):
-        x = np.random.rand(n_topics)
+        x = 0.01 + np.random.rand(n_topics) / divider
         author_p.append(x)
-        print(x / x.sum())
+        print(x)
 
     # Generate topic multinomial distributions over words
     # (drawn from dirichlet)
@@ -104,6 +104,9 @@ if __name__ == "__main__":
     parser.add_argument('--n_words_per_doc',
                         help='Mean number of words per doc',
                         default=1000, type=int)
+    parser.add_argument('--divisor',
+                        help='Divisor for dirichlet parameters',
+                        default=1.0, type=float)
     args = parser.parse_args()
 
     # Write a file for each ngram type
@@ -111,7 +114,8 @@ if __name__ == "__main__":
     for i in range(args.n_types):
         type_docs = generate_documents(args.n_authors, args.n_topics,
                                        args.n_docs, args.n_words,
-                                       args.n_words_per_doc)
+                                       args.n_words_per_doc,
+                                       divider=args.divisor)
         save_docs(type_docs, args.prefix, i)
 
     # Go through once and write the label file
