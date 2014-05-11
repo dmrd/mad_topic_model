@@ -86,14 +86,14 @@ On top of these primitives, we also developed an algorithm to extract meter, ins
 
 In total, this composed seven stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $6$-grams were produced).
 
-For illustrative purposes, Table~\ref{tab:sample_ngrams} presents several common stylistic $n$-grams and corresponding examples drawn from a Quora post by Yishan Wong, the CEO of Reddit. Notice that our feature extraction heuristics correctly identify ``Bitcoin" as a two-syllable word (despite the fact that it is not in the CMU Pronouncing Dictionary).
+For illustrative purposes, Table~\ref{tab:sample_ngrams} presents several common stylistic $n$-grams and corresponding examples drawn from a Quora post by Yishan Wong, the CEO of Reddit. Notice that our feature extraction heuristics correctly identify ``Bitcoin" as a two-syllable word (despite the fact that it is not in the CMU Pronouncing Dictionary). Similarly, the etymology of ``stated" (Latin) was deduced by looking up its root, ``state"; as was the etymology of ``aims" (Old French) by looking up its root, ``aim".
 
 \begin{table}[ht] 
 \centering
 \begin{tabular}{ c | c | c }
   Type & $n$-gram & Matching Text \\
   \hline
-  Etymology & (OE, OE, L, OE) & ``I say increasingly because..." \\
+  Etymology & (AS, OE, L, OF) & ``... the key stated aims..." \\
   Syllable & (1, 1, 2, 1) & ``...fact that Bitcoin is..." \\
   Part-of-Speech & (DT, JJ, NN, IN) & ``...the libertarian culture of..." \\
   Word Counts & (7, --, 2, --) & ``It has all the features of Bitcoin--technologically speaking-- ..."
