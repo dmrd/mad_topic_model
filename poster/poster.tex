@@ -149,27 +149,47 @@ INSERT GRAPHIC
 %	MATERIALS
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Data}
 
-To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. 
+\begin{block}{Model}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+  \tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 16mm]
+  \tikzstyle{connect}=[-latex, thick]
+  \tikzstyle{box}=[rectangle, draw=black!100]
+    \node[main, fill = white!100] (theta)  {$\theta$ };
+    \node[main] (alpha) [left=of theta] { $\alpha$};
+    \node[main] (z) [right=of theta] {$z$};
+    \node[main, fill = black!10] (w) [right=of z] {$w$};
+    \node[main] (beta) [above=of z]{$\beta$};
+    \node[main] (lambda) [left=of beta]{$\lambda$};
+    \node[main] (y) [right=of w, fill = white!100, xshift = -6mm]{$y$};
+    \node[main] (eta) [above=of y, xshift = 28mm,yshift=-2mm]{$\eta$};
+    \path (alpha) edge [connect] (theta)
+          (theta) edge [connect] (z)
+          (z) edge [connect] (w)
+          (lambda) edge [connect] (beta)
+          (beta) edge [connect] (w)
+          (eta) edge [connect] (y)
+          (w) edge [connect] (y);
+    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 10mm, xshift=3mm] {};
+	\node[rectangle, inner sep=8mm,draw=black!100, fit= (z) (w), yshift = -6mm] {};
+	 \node[rectangle, inner sep=8mm, fit= (beta),label=above right:k, yshift = -14mm, xshift=-15mm] {};
+	\node[rectangle, inner sep=8mm,draw=black!100, fit= (beta), yshift = 2mm] {};
+	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 4mm, xshift=-50.5mm] {};
+	\node[rectangle, inner sep=16mm, draw=black!100, fit = (theta) (z) (y) (w), yshift = -12mm, xshift=16] {};
+	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 8mm, xshift=-40mm] {};
+	\node[rectangle, inner sep=20mm, draw=black!100, fit = (alpha) (theta) (z) (w) (y), yshift = -13mm, xshift=16] {};
+	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=65] {};
 
-\vspace{10 mm}
+	\node[rectangle, inner sep=28mm, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -13mm, xshift=16] {};
 
-\begin{table}[ht] 
-\caption{Datasets collected for training and testing}
-\centering
-\begin{tabular}{ c | c | c }
-  Source & # Authors & Docs/Author \\
-  \hline
-  Project Gutenberg & 5 & 50 \\
-  Nassau Weekly & 550 & 200 \\
-  Quora & 1600 & 100 \\
-\end{tabular}
-\end{table}
-
-\vspace{10 mm}
-
-Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from the campus publication. Quora captures responses from top users on the question-answer site. The diversity in topic, language, and length challenges our model to detect consistent features in such a variety of contexts.
+    %\node[rectangle, inner sep=4.4mm, draw=black!100, fit= (x) (iota)  (beta) (r) ,label=below right:N,yshift=-3mm ] {};
+    %\node[rectangle, inner sep=3.0mm, draw=black!100, fit= (x) ,label=below left:K] {};
+  \end{tikzpicture}
+  \caption{Graphical Model for the MAD Topic Model}
+\end{figure}
+\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with the Author Topic Model in \cite{rosen2004author}, and extending both to account for multiple word types. The model is variational inference, following coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
 
 \end{block}
 
@@ -216,46 +236,27 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
 %	MATHEMATICAL SECTION
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Model}
-\begin{figure}[h!]
-  \centering
-  \begin{tikzpicture}
-  \tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 16mm]
-  \tikzstyle{connect}=[-latex, thick]
-  \tikzstyle{box}=[rectangle, draw=black!100]
-    \node[main, fill = white!100] (theta)  {$\theta$ };
-    \node[main] (alpha) [left=of theta] { $\alpha$};
-    \node[main] (z) [right=of theta] {$z$};
-    \node[main, fill = black!10] (w) [right=of z] {$w$};
-    \node[main] (beta) [above=of z]{$\beta$};
-    \node[main] (lambda) [left=of beta]{$\lambda$};
-    \node[main] (y) [right=of w, fill = white!100, xshift = -6mm]{$y$};
-    \node[main] (eta) [above=of y, xshift = 28mm,yshift=-2mm]{$\eta$};
-    \path (alpha) edge [connect] (theta)
-          (theta) edge [connect] (z)
-          (z) edge [connect] (w)
-          (lambda) edge [connect] (beta)
-          (beta) edge [connect] (w)
-          (eta) edge [connect] (y)
-          (w) edge [connect] (y);
-    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 10mm, xshift=3mm] {};
-	\node[rectangle, inner sep=8mm,draw=black!100, fit= (z) (w), yshift = -6mm] {};
-	 \node[rectangle, inner sep=8mm, fit= (beta),label=above right:k, yshift = -14mm, xshift=-15mm] {};
-	\node[rectangle, inner sep=8mm,draw=black!100, fit= (beta), yshift = 2mm] {};
-	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 4mm, xshift=-50.5mm] {};
-	\node[rectangle, inner sep=16mm, draw=black!100, fit = (theta) (z) (y) (w), yshift = -12mm, xshift=16] {};
-	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 8mm, xshift=-40mm] {};
-	\node[rectangle, inner sep=20mm, draw=black!100, fit = (alpha) (theta) (z) (w) (y), yshift = -13mm, xshift=16] {};
-	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=65] {};
+\begin{block}{Data}
 
-	\node[rectangle, inner sep=28mm, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -13mm, xshift=16] {};
+To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. 
 
-    %\node[rectangle, inner sep=4.4mm, draw=black!100, fit= (x) (iota)  (beta) (r) ,label=below right:N,yshift=-3mm ] {};
-    %\node[rectangle, inner sep=3.0mm, draw=black!100, fit= (x) ,label=below left:K] {};
-  \end{tikzpicture}
-  \caption{Graphical Model for the MAD Topic Model}
-\end{figure}
-\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with the Author Topic Model in \cite{rosen2004author}, and extending both to account for multiple word types. The model is variational inference, following coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
+\vspace{5 mm}
+
+\begin{table}[ht] 
+\caption{Datasets collected for training and testing}
+\centering
+\begin{tabular}{ c | c | c }
+  Source & Authors & Docs/Author \\
+  \hline
+  Project Gutenberg & 5 & 50 \\
+  Nassau Weekly & 550 & 200 \\
+  Quora & 1600 & 100 \\
+\end{tabular}
+\end{table}
+
+\vspace{10 mm}
+
+Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from the campus publication. Quora captures responses from top users on the question-answer site. The diversity in topic, language, and length challenges our model to detect consistent features in such a variety of contexts.
 
 \end{block}
 
