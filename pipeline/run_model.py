@@ -9,21 +9,26 @@
 # This script makes me feel dirty inside D= , but it works =D
 import os
 import sys
+import subprocess
 
-data_name = sys.argv[1]
-min_doc_per_author = int(sys.argv[2])
-nfolds = int(sys.argv[3])
-ntopics = int(sys.argv[4])
-
+try:
+    data_name = sys.argv[1]
+    min_doc_per_author = int(sys.argv[2])
+    nfolds = int(sys.argv[3])
+    ntopics = int(sys.argv[4])
+except:
+    print("Usage: run_model.py data_name min_docs_per_author nfolds ntopics")
+    exit()
 
 NTYPES = 6
 
-
+os.system("make -C ../models/slda clean && make -C ../models/slda")
 os.system("mkdir output/{n} output/{n}/models output/{n}/data".format(n=data_name))
 os.system("rm -f output/{n}/models/* output/{n}/data/*".format(n=data_name))
 os.system("sh copy_ngrams.sh ../slda_input_files/{n} output/{n}/data/{n} {min_doc}".format(n=data_name,
                                       min_doc=min_doc_per_author))
 os.system("python test_train_split.py output/{n}/data/{n} {types} {nfolds}".format(n=data_name, types=NTYPES, nfolds=nfolds))
+print("python test_train_split.py output/{n}/data/{n} {types} {nfolds}".format(n=data_name, types=NTYPES, nfolds=nfolds))
 
 slda_est = []
 slda_inf = []
@@ -47,6 +52,7 @@ slda_inf.append("../models/slda/settings.txt")
 slda_inf.append(model_loc + "final.model")
 slda_inf.append(model_loc)
 
+
 for fold in range(nfolds):
     print("********************* Running fold {} *********************".format(fold))
     # Make output folder
@@ -64,6 +70,13 @@ for fold in range(nfolds):
 
 
 print("\n\n\n**************** RESULTS ****************\n")
+log = []
+
 for fold in range(nfolds):
-    print("**** Fold {} results ****".format(fold))
-    os.system("tail -n5 output/{n}/models/{fold}/inf-labels.dat".format(n=data_name, fold=fold))
+    log.append("\n**** Fold {} results ****".format(fold))
+    log.append(subprocess.check_output("tail -n5 output/{n}/models/{fold}/inf-labels.dat".format(n=data_name,
+                                                                                                 fold=fold), shell=True))
+with open("logs/{}_{}_{}_{}.log".format(data_name, min_doc_per_author,
+                                        nfolds, ntopics), 'w') as f:
+    f.write('\n'.join(log))
+print('\n'.join(log))
