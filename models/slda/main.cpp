@@ -100,5 +100,6 @@ int main(int argc, char* argv[])
         model.infer_only(c, &setting, directory);
     }
 
+
     return 0;
 }

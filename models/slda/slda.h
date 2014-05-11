@@ -94,6 +94,8 @@ public:
     suffstats * new_suffstats( int t);
     //void free_suffstats(suffstats ** ss, int t);
     void zero_initialize_ss(suffstats * ss, int t);
+    //for svi
+    void zero_initialize_word(suffstats * ss, int t);
     void random_initialize_ss(suffstats * ss, corpus * c, int t);
     void corpus_initialize_ss(suffstats * ss, corpus * c, int t);
     void load_model_initialize_ss(suffstats* ss, corpus * c, int t);
@@ -126,7 +128,7 @@ public:
 
     int getDoc(int a, int d);
     double add_penalty(const settings * setting);
-
+    double get_rho(int i);
 
     //stochastic optimization
     //void stoch_logistic(vector<suffstats *> ss, const settings * setting,
