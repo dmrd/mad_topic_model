@@ -24,6 +24,7 @@
 <script>
 
 var colors = { "syllable": "coral", "pos": "green", "etymology": "red", "word": "steelblue" };
+var descriptions = { "syllable": "Syllables", "pos": "Part-of-Speech", "etymology": "Etymology", "word": "Words" };
 
 var width = 800,
     height = 700;
@@ -64,8 +65,27 @@ d3.json("output.json", function(error, root) {
 
   node.append("text")
       .attr("dy", -8)
-      .style("text-anchor", function(d) { return d.children ? "middle" : "middle"; })
+      .style("text-anchor", "middle")
       .text(function(d) { return d.body; });
+
+  node.filter(function(d) { return d.children })
+      .append("text")
+      .attr("dy", 22)
+      .style("text-anchor", "middle")
+      .text(function(d) { return descriptions[d.type]; });
+
+  var y = 175;
+  var lineData = [{'x': -100, 'y': y}, {'x': width + 100, 'y': y}];
+  var lineFunction = d3.svg.line()
+    .x(function(d) { return d.x; })
+    .y(function(d) { return d.y; })
+    .interpolate("linear");
+  console.log(lineData);
+  svg.append("path")
+    .style("stroke-dasharray", (3, 3))
+    .attr("d", lineFunction(lineData))
+    .attr("stroke", "firebrick")
+    .attr("stroke-width", 1);
 });
 
 d3.select(self.frameElement).style("height", height + "px");

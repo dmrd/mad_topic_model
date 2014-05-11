@@ -236,6 +236,13 @@ def stress_counts_by_syllable(text, SECONDARY=True):
 #
 
 
+def etymology_with_words(text):
+    exclude = set(punctuation)
+    text = ''.join(ch for ch in text if ch not in exclude)
+    text = word_tokenize(text)
+    return map(lambda w: (w, e.lookup(w)), text)
+
+
 def etymology_representation(text):
     exclude = set(punctuation)
     text = ''.join(ch for ch in text if ch not in exclude)

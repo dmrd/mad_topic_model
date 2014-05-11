@@ -9,11 +9,21 @@ def find_all_matching_ngrams(text, ngram, ngram_extractor, PUNC=True):
     n = len(ngram)
     word_ngrams = analyzer.word_ngrams(text, n, PUNC=PUNC)
     target_ngrams = ngram_extractor(text, n)
+    print word_ngrams, target_ngrams
+    return list(zip(*filter(lambda x: x[1] == ngram, zip(word_ngrams, target_ngrams)))[0])
+
+
+def find_matches_for_pairs(pairs, ngram):
+    n = len(ngram)
+    split = zip(*pairs)
+    word_ngrams = analyzer.to_ngrams(split[0], n)
+    target_ngrams = analyzer.to_ngrams(split[1], n)
     return list(zip(*filter(lambda x: x[1] == ngram, zip(word_ngrams, target_ngrams)))[0])
 
 
 def find_pos_ngram(text, ngram):
-    return find_all_matching_ngrams(text, ngram, analyzer.pos_ngrams)
+    pairs = analyzer.tag_text(text)
+    return find_matches_for_pairs(pairs, ngram)
 
 
 def find_syllable_ngram(text, ngram):
@@ -21,7 +31,8 @@ def find_syllable_ngram(text, ngram):
 
 
 def find_etymology_ngram(text, ngram):
-    return find_all_matching_ngrams(text, ngram, analyzer.etymology_ngrams, PUNC=False)
+    pairs = analyzer.etymology_with_words(text)
+    return find_matches_for_pairs(pairs, ngram)
 
 
 def sentence_ngrams(text, n):
