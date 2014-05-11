@@ -153,7 +153,25 @@ Preliminary results show significant improvement over more naive techniques (suc
 
 \begin{block}{Data}
 
-To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. We selected these three data sources for their diversity in topic, language, and length. Our Project Gutenberg dataset features fictional story excerpts from five, public-domain authors. The Nassau Weekly dataset features over 550 articles from about 200 authors. On the higher end, the Quora dataset features over 1600 comments from roughly 100 popular Quora users. The challenge posed for our authorship models is to detect consistent features in such a variety of contexts.
+To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. 
+
+\vspace{10 mm}
+
+\begin{table}[ht] 
+\caption{Datasets collected for training and testing}
+\centering
+\begin{tabular}{ c | c | c }
+  Source & # Authors & Docs/Author \\
+  \hline
+  Project Gutenberg & 5 & 50 \\
+  Nassau Weekly & 550 & 200 \\
+  Quora & 1600 & 100 \\
+\end{tabular}
+\end{table}
+
+\vspace{10 mm}
+
+Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from the campus publication. Quora captures responses from top users on the question-answer site. The diversity in topic, language, and length challenges our model to detect consistent features in such a variety of contexts.
 
 \end{block}
 
