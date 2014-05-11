@@ -470,6 +470,7 @@ void slda::updatePriorSimple(double *** var_gamma, const settings * s)
 
     for (int t = 0; t < num_word_types; t++)
     {
+        cout << "T: " << t << "\n";
         double * p_doc = new double[num_topics[t]];
         double p_doc_sum = 0; 
         double * p_aut = new double[num_topics[t]];
@@ -495,17 +496,23 @@ void slda::updatePriorSimple(double *** var_gamma, const settings * s)
             p_doc[k] /= p_doc_sum;
         }
 
+        cout << "GLOBAL ALPHA: \n";
         for (int k = 0; k < num_topics[t]; k++)
         {
+            cout << "alpha k " << k << ": " << p_doc[k] << "\n";
             as_global[t]->alpha_t[k] = p_doc[k];
         }
+
         as_global[t]->alpha_sum_t=p_doc_sum;
 
 
         //update
-            
+
+        cout << "AUTHOR ALPHA: \n";
         for (int a = 0; a < num_classes; a++)
         {
+            cout << "AUTHOR ALPHA: " << a << " \n";
+
             p_aut_sum = 0;
             for (int k = 0; k < num_topics[t]; k++)
             {
@@ -524,11 +531,12 @@ void slda::updatePriorSimple(double *** var_gamma, const settings * s)
 
             for (int k = 0; k < num_topics[t]; k++)
             {
-                p_doc[k] /= p_doc_sum;
+                p_aut[k] /= p_aut_sum;
             }
 
             for (int k = 0; k < num_topics[t]; k++)
             {
+                cout << "alpha k " << k << ": " << p_aut[k] << "\n";
                 as[t][a]->alpha_t[k] = p_aut[k];
             }
             as[t][a]->alpha_sum_t = p_aut_sum;
@@ -672,7 +680,7 @@ void slda::v_em(corpus * c, const settings * setting,
 
     double converged_old = 99999;
     bool not_stop = true;
-    while (not_stop)
+    while (not_stop || i<= 20)
     {
 
         printf("**** em iteration %d ****\n", ++i);
@@ -746,7 +754,7 @@ void slda::v_em(corpus * c, const settings * setting,
         printf("**** m-step ****\n");
 
         //update dictionary and logistic parameter
-        if (i % 3 == 0)
+        if (i % 2 == 0)
         {
             cout << "MLE LOG \n";
             mle_logistic(ss, -1, setting, random_v);
@@ -1480,7 +1488,7 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
     {
         for (k = 0; k < num_topics[t]; k++)
         {
-            if( var_gamma[t][k] == 0)
+            if( var_gamma[t][k] == 0 || setting->ORIGINAL)
             {
                 var_gamma[t][k] = as[t][a]->alpha_t[k] + (doc->total[t]/((double) num_topics[t]));
                // if (d == 0 && k == 0 && t == 0)
@@ -1587,31 +1595,30 @@ double slda::slda_inference(document* doc, double ** var_gamma, double *** phi,
                     }
                     sf_aux[l] *= t0;
                 }
-                /**
-                for (k = 0; k < num_topics[t]; k++)
-                {
-                    var_gamma[t][k] = var_gamma[t][k] + doc->counts[t][n]*(phi[t][n][k] - oldphi[k]);
-                    digamma_gam[t][k] = digamma(var_gamma[t][k]);
-                }
-                **/
+                if (setting->ORIGINAL)
+                    for (k = 0; k < num_topics[t]; k++)
+                    {
+                        var_gamma[t][k] = var_gamma[t][k] + doc->counts[t][n]*(phi[t][n][k] - oldphi[k]);
+                        digamma_gam[t][k] = digamma(var_gamma[t][k]);
+                    }
                 
             }
 
         }
-        
-        for (t = 0; t < num_word_types; t++)
-        {
-            for (k = 0; k < num_topics[t]; k++)
+        if (!setting->ORIGINAL)
+            for (t = 0; t < num_word_types; t++)
             {
-                var_gamma[t][k] = as[t][a]->alpha_t[k];
-                for (n = 0; n < doc->length[t]; n++)
+                for (k = 0; k < num_topics[t]; k++)
                 {
-                     var_gamma[t][k]+= phi[t][n][k]*doc->counts[t][n];
-                }
-                digamma_gam[t][k] = digamma(var_gamma[t][k]);
+                    var_gamma[t][k] = as[t][a]->alpha_t[k];
+                    for (n = 0; n < doc->length[t]; n++)
+                    {
+                         var_gamma[t][k]+= phi[t][n][k]*doc->counts[t][n];
+                    }
+                    digamma_gam[t][k] = digamma(var_gamma[t][k]);
 
+                }
             }
-        }
         
 
 
@@ -2467,6 +2474,8 @@ void slda::load_model(const char * filename)
             }
         }
     }
+
+
 
     fflush(file);
     fclose(file);

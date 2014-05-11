@@ -41,6 +41,7 @@ struct settings
     bool USE_L1;
     double L1_PENALTY;
     bool ONE_TOPIC;
+    bool ORIGINAL;
 
     void read_settings(char* filename)
     {
@@ -77,6 +78,7 @@ struct settings
         this->EM_MIN_ITER = 10;
         this->TOPIC_SMOOTH = false;//false;
         this->STOCHASTIC = false; 
+        this->ORIGINAL = true;
 
 
         if (strcmp(alpha_action, "fixed") == 0)
