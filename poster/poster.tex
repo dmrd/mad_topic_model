@@ -229,7 +229,7 @@ In the \textit{authorship detection} problem, one is given:
 
 \begin{alertblock}{Summary}
 
-The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
+The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
 \end{alertblock} 
 
 %----------------------------------------------------------------------------------------
@@ -302,10 +302,12 @@ Project Gutenberg contains excerpts from fictional books. Nassau Weekly features
 
 \begin{block}{Visualization}
 
+The MAD Topic Model generates topics over $n$-grams of stylistic features, which in turn highlights writing's implicit structure. We used the Termite visualization tool to generate graphical representations of our topic models.
+
 \begin{figure}
 \centering
 \includegraphics[width=\linewidth]{termite.png}
-\caption{Topic model proportions for the word count $n$-grams. Topic 21 represents short, staccato sentences.}
+\caption{A topic model for word count (between punctuation) $n$-grams. Topic 21 represents short, staccato sentences.}
 \end{figure}
 
 \end{block}
