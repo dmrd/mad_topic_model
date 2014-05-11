@@ -125,9 +125,15 @@ In the \textit{authorship detection} problem, one is given:
 \begin{itemize}
 \item A set of documents labeled (by author) on which to train.
 \item A set of anonymized documents to classify.
-\end{itemize} Methods for authorship detection traditionally depended on careful feature extraction and rather black-box methods. Hence, they rely on extensive domain specific knowledge, and can be difficult to decipher. Here, we present the \textit{MAD Topic Model}, which uses  syntactic and stylometric n-gram features (e.g., part-of-speech tags, meter). MAD fits separate topic models to each of these ngram vocabularies, and then combines the models with a multiclass logistic regression classifier. After fitting the topic model parameters, new data can be classified using the multiclass component. 
+\end{itemize} Methods for authorship detection traditionally depended on careful feature extraction and rather black-box methods. Hence, they rely on extensive domain specific knowledge, and can be difficult to decipher.
 
-INSERT GRAPHIC
+We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $n$-gram features (e.g., part-of-speech tags, meter). MAD fits separate topic models to each of these $n$-gram vocabularies and  combines the models through a multi-class logistic regression classifier. After fitting the topic model parameters, new documents can be classified using the multi-class component. As a by-product, MAD also breaks stylistic features into vocabularies over topics, creating a compact representation of stylistic tendency.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{nll.png}
+\caption{MAD's increasing Negative Log Likelihood (NLL) over time.}
+\end{figure}
 
 \end{block}
 
@@ -149,54 +155,6 @@ INSERT GRAPHIC
 %	MATERIALS
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Data}
-
-To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. We selected these three data sources for their diversity in topic, language, and length. Our Project Gutenberg dataset features fictional story excerpts from five, public-domain authors. The Nassau Weekly dataset features over 550 articles from about 200 authors. On the higher end, the Quora dataset features over 1600 comments from roughly 100 popular Quora users. The challenge posed for our authorship models is to detect consistent features in such a variety of contexts.
-
-\end{block}
-
-%----------------------------------------------------------------------------------------
-
-\end{column} % End of column 2.1
-
-\begin{column}{\onecolwid}\vspace{-.6in} % The second column within column 2 (column 2.2)
-
-%----------------------------------------------------------------------------------------
-%	METHODS
-%----------------------------------------------------------------------------------------
-
-\begin{block}{Features}
-
-\begin{center}
-\includegraphics[width=\linewidth]{dendrogram.png}
-\end{center}
-
-\end{block}
-
-%----------------------------------------------------------------------------------------
-
-\end{column} % End of column 2.2
-
-\end{columns} % End of the split of column 2 - any content after this will now take up 2 columns width
-
-%----------------------------------------------------------------------------------------
-%	IMPORTANT RESULT
-%----------------------------------------------------------------------------------------
-
-\begin{alertblock}{Summary}
-
-The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation \citep{Blei2003} to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised''--it includes a multi-class logistic regression as in \cite{Blei2007}--and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
-\end{alertblock} 
-
-%----------------------------------------------------------------------------------------
-
-\begin{columns}[t,totalwidth=\twocolwid] % Split up the two columns wide column again
-
-\begin{column}{\onecolwid} % The first column within column 2 (column 2.1)
-
-%----------------------------------------------------------------------------------------
-%	MATHEMATICAL SECTION
-%----------------------------------------------------------------------------------------
 
 \begin{block}{Model}
 \begin{figure}[h!]
@@ -237,7 +195,76 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
   \end{tikzpicture}
   \caption{Graphical Model for the MAD Topic Model}
 \end{figure}
-\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with the Author Topic Model in \cite{rosen2004author}, and extending both to account for multiple word types. The model is variational inference, following coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
+\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with an Author Topic Model, and extends both to account for multiple word types. The model is based on variational inference, following the coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
+
+\end{block}
+
+%----------------------------------------------------------------------------------------
+
+\end{column} % End of column 2.1
+
+\begin{column}{\onecolwid}\vspace{-.6in} % The second column within column 2 (column 2.2)
+
+%----------------------------------------------------------------------------------------
+%	METHODS
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Features}
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{dendrogram.png}
+\caption{Feature extraction for the MAD Topic Model. Word and syllable counts (between punctuation) were also included.}
+\end{figure}
+
+\end{block}
+
+%----------------------------------------------------------------------------------------
+
+\end{column} % End of column 2.2
+
+\end{columns} % End of the split of column 2 - any content after this will now take up 2 columns width
+
+%----------------------------------------------------------------------------------------
+%	IMPORTANT RESULT
+%----------------------------------------------------------------------------------------
+
+\begin{alertblock}{Summary}
+
+The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
+\end{alertblock} 
+
+%----------------------------------------------------------------------------------------
+
+\begin{columns}[t,totalwidth=\twocolwid] % Split up the two columns wide column again
+
+\begin{column}{\onecolwid} % The first column within column 2 (column 2.1)
+
+%----------------------------------------------------------------------------------------
+%	MATHEMATICAL SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Data}
+
+To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. 
+
+\vspace{5 mm}
+
+\begin{table}[ht] 
+\caption{Datasets collected for training and testing}
+\centering
+\begin{tabular}{ c | c | c }
+  Source & Authors & Docs/Author \\
+  \hline
+  Project Gutenberg & 5 & 50 \\
+  Nassau Weekly & 550 & 200 \\
+  Quora & 1600 & 100 \\
+\end{tabular}
+\end{table}
+
+\vspace{10 mm}
+
+Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from the campus publication. Quora captures responses from top users on the question-answer site. The diversity in topic, language, and length challenges our model to detect consistent features in such a variety of contexts.
 
 \end{block}
 
@@ -255,7 +282,7 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
 
 
 \small
-\indent Unfortunately, preliminary results show that which MAD fares far worse as using the same features with another classification scheme. This is consistent with \cite{...}, which suggests that a Pitman-Yor process better captures power law frequencies in language use than Dirichlet methods. Nevertheless, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of individual writing style.
+\indent Unfortunately, preliminary results show that which MAD fares far worse as using the same features with another classification scheme. This is consistent with recent findings that suggest that a Pitman-Yor process better captures power law frequencies in language use than Dirichlet methods. Nevertheless, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of individual writing style.
 
 \end{block}
 
@@ -277,7 +304,13 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
 
 \begin{block}{Visualization}
 
-Replace this with some visualization.
+The MAD Topic Model generates topics over $n$-grams of stylistic features, which in turn highlights writing's implicit structure. We used the Termite visualization tool to generate graphical representations of our topic models.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{termite.png}
+\caption{A topic model for word count (between punctuation) $n$-grams. Topic 21 represents short, staccato sentences.}
+\end{figure}
 
 \end{block}
 
@@ -295,7 +328,7 @@ Our (short) conclusion.
 %	ACKNOWLEDGEMENTS
 %----------------------------------------------------------------------------------------
 
-\setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
+% \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
 
 \begin{block}{References}
 \small
