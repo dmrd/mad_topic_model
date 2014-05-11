@@ -1,31 +1,13 @@
-\begin{thebibliography}{4}
+\begin{thebibliography}{1}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Blei and McAuliffe(2007)]{Blei2007}
-David~M Blei and Jon~D McAuliffe.
-\newblock Supervised {T}opic {M}odels.
-\newblock In \emph{NIPS}, volume~7, pages 121--128, 2007.
-
-\bibitem[Blei et~al.(2003)Blei, Ng, and Jordan]{Blei2003}
-David~M Blei, Andrew~Y Ng, and Michael~I Jordan.
-\newblock Latent {D}irichlet {A}llocation.
-\newblock \emph{Journal of Machine Learning Research}, 3:\penalty0 993--1022,
-  2003.
-
-\bibitem[Rosen-Zvi et~al.(2004)Rosen-Zvi, Griffiths, Steyvers, and
-  Smyth]{rosen2004author}
-Michal Rosen-Zvi, Thomas Griffiths, Mark Steyvers, and Padhraic Smyth.
-\newblock The {A}uthor-{T}opic {M}odel for {A}uthors and {D}ocuments.
-\newblock In \emph{Proceedings of the 20th conference on Uncertainty in
-  artificial intelligence}, pages 487--494. AUAI Press, 2004.
-
 \bibitem[Wang et~al.(2009)Wang, Blei, and Li]{wang2009simultaneous}
 Chong Wang, David Blei, and Fei-Fei Li.
-\newblock Simultaneous {I}mage {C}lassification and {A}nnotation.
+\newblock Simultaneous image classification and annotation.
 \newblock In \emph{Computer Vision and Pattern Recognition, 2009. CVPR 2009.
   IEEE Conference on}, pages 1903--1910. IEEE, 2009.
 
