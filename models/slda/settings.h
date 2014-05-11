@@ -27,6 +27,8 @@ struct settings
 {
     float VAR_CONVERGED;
     int   VAR_MAX_ITER;
+    int BATCH_SIZE;
+    int BIG_BATCH_SIZE;
     float EM_CONVERGED;
     int   EM_MAX_ITER;
     int   ESTIMATE_ALPHA;
@@ -38,8 +40,7 @@ struct settings
     bool STOCHASTIC;
     bool USE_L1;
     double L1_PENALTY;
-
-
+    bool ONE_TOPIC;
 
     void read_settings(char* filename)
     {
@@ -47,6 +48,10 @@ struct settings
         char alpha_action[100];
 
         int smoothed_int;
+        BATCH_SIZE = 4;
+        BIG_BATCH_SIZE = 10;
+        ONE_TOPIC = false;
+
 
         fileptr = fopen(filename, "r");
         fscanf(fileptr, "var max iter %d\n", &this->VAR_MAX_ITER);
@@ -61,7 +66,7 @@ struct settings
         fscanf(fileptr, "var min iter %d\n", &this->EM_MIN_ITER);
 
         USE_L1 = false;
-        L1_PENALTY = 0;//.01;
+        L1_PENALTY = 0;// .01; //.01;
         // read in not working
         printf("smoothed, %d", smoothed_int);
         printf("min iter %d", this->EM_MIN_ITER);
@@ -70,7 +75,7 @@ struct settings
         this->SMOOTH_WEIGHT = .1;
         this->IS_SMOOTHED = false;
         this->EM_MIN_ITER = 10;
-        this->TOPIC_SMOOTH = false;
+        this->TOPIC_SMOOTH = false;//false;
         this->STOCHASTIC = false; 
 
 
@@ -81,9 +86,10 @@ struct settings
         }
         else
         {
-            this->ESTIMATE_ALPHA = 1;
+            this->ESTIMATE_ALPHA = 0;// 1;
             printf("alpha is estimated ...\n");
         }
+        this->ESTIMATE_ALPHA = 1;
         fclose(fileptr);
         printf("var max iter %d\n", this->VAR_MAX_ITER);
         printf("var convergence %.2E\n", this->VAR_CONVERGED);

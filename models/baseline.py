@@ -6,8 +6,8 @@ Reads in data in same format as the slda model does
 
 import sys
 import numpy as np
-from sklearn.cross_validation import LeaveOneOut, KFold
-from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import LeaveOneOut, KFold, StratifiedKFold
+from sklearn.linear_model import LogisticRegression, LassoCV
 from sklearn import metrics
 
 prefix = sys.argv[1]
@@ -24,6 +24,7 @@ with open(prefix + "_labels") as f:
 
 # Files that need loading
 data = [prefix + "_" + str(x) for x in range(n_types)]
+# data = [prefix + "_" + str(n_types)]
 
 # Read in files
 lines = []
@@ -62,13 +63,14 @@ print("Running cross validation...")
 # Do actual classification
 predictions = Y.copy()
 clf = LogisticRegression()
+# clf = LassoCV()
 # for train, test in LeaveOneOut(len(Y)):
-for i, (train, test) in enumerate(KFold(len(Y), n_folds=nfolds)):
+for i, (train, test) in enumerate(StratifiedKFold(Y, n_folds=nfolds)):
     print("Fold {}".format(i + 1))
     clf.fit(X[train], Y[train])
     predictions[test] = clf.predict(X[test])
 
 print("Accuracy: {}".format(metrics.accuracy_score(Y, predictions)))
 
-# print(metrics.classification_report(Y, predictions))
-# print(metrics.confusion_matrix(Y, predictions))
+print(metrics.classification_report(Y, predictions))
+print(metrics.confusion_matrix(Y, predictions))

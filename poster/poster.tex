@@ -125,11 +125,9 @@ In the \textit{authorship detection} problem, one is given:
 \begin{itemize}
 \item A set of documents labeled (by author) on which to train.
 \item A set of anonymized documents to classify.
-\end{itemize}Methods for authorship detection have traditionally depended on lexical analysis of the text, making them relatively context-dependent.
+\end{itemize} Methods for authorship detection traditionally depended on careful feature extraction and rather black-box methods. Hence, they rely on extensive domain specific knowledge, and can be difficult to decipher. Here, we present the \textit{MAD Topic Model}, which uses  syntactic and stylometric n-gram features (e.g., part-of-speech tags, meter). MAD fits separate topic models to each of these ngram vocabularies, and then combines the models with a multiclass logistic regression classifier. After fitting the topic model parameters, new data can be classified using the multiclass component. 
 
-Instead, the \textit{MAD Topic Model} depends solely on syntactic and stylometric features (e.g., part-of-speech tags, meter), which are less context-dependent. MAD treats these features as vocabularies over which topic models can be determined, performing a Supervised Latent Dirichlet Allocation (SLDA) algorithm over $n$-gram stylistic features to determine authorship of anonymized text.
-
-Preliminary results show significant improvement over more naive techniques (such as Logistic MLE) using the same features. As a by-product, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of writing style.
+INSERT GRAPHIC
 
 \end{block}
 
@@ -257,8 +255,7 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
   \end{tikzpicture}
   \caption{Graphical Model for the MAD Topic Model}
 \end{figure}
-
-
+\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with the Author Topic Model in \cite{rosen2004author}, and extending both to account for multiple word types. The model is variational inference, following coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
 
 \end{block}
 
@@ -274,7 +271,9 @@ The Multivalence Authorship Detection (MAD) Topic Model extends Latent Dirichlet
 
 \begin{block}{Results}
 
-Our results.
+
+\small
+\indent Unfortunately, preliminary results show that which MAD fares far worse as using the same features with another classification scheme. This is consistent with \cite{...}, which suggests that a Pitman-Yor process better captures power law frequencies in language use than Dirichlet methods. Nevertheless, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of individual writing style.
 
 \end{block}
 
@@ -317,7 +316,7 @@ Our (short) conclusion.
 \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
 
 \begin{block}{References}
-
+\small
 \bibliography{poster}
 \bibliographystyle{plainnat}
 

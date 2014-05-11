@@ -89,11 +89,13 @@ In total, this composed seven stylometric features. For each document, we extrac
 
 \section{Methods}
 
-
-
+To explore our data  we feed our extracted features as bags of n-grams to a novel LDA extension, the Multivalence Authorship Detection (MAD) Topic Model. The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} and \cite{Blei2007}, with the Author Topic Model in \cite{rosen2004author}, and extending both to account for multiple word types.  For each word type $t$, MAD posits its own LDA topic model. Unlike conventional LDA, in which each document shares a common Dirichlet prior, MAD gives each author her own Dirichlet prior which can be optimized with coordinate descent. This differs from the Author Topic Model, which treats each author's oeuvre as one contiguous document.
+Like SLDA, MAD has a multiclass regression parameter $\eta$, from which classes are drawn from $\text{softmax}(\eta^T\bar{z})$, where $\overline{z}$ are the average topic assignments for each work. The complete generative process is specified in the Appendix, and the graphical model is show in... The key innovation in this model is that it is doubly supervised: first, each author has her own topic proportions, which enforce shared topics between her documents. And second, upon conditioning on the multiclass logistic regression $\eta$, the topic assignments $z$ which contribute to correct classification are given a higher likelihood.  Thus, one would expect that the \emph{more salient} features are selected for during inference. It is crucial to note that, during training, authorship is thereby treated as both a known label and random variable. In the test stage, however, we marginalize over authors, as described in the Appendix.
+The model is fit with variational inference, discussed in \cite{wainwright2008graphical}. It is well known that exact inference for LDA requires computing a prohibitive integral \cite{Blei2003}. Instead, the posterior distribution $p(a,w,z,\theta|\alpha,\theta,\lambda,\eta)$ is approximated with a variational family: $q(\theta|\gamma)\prod_{n}q(z|\phi)$, indexed by parameters $\gamma$ and $\phi$. Here $\theta|\gamma \sim\text{Dirichlet}(\gamma)$ and $z|\phi \sim\text{Multi}(\phi)$, so that complete conditionals of $\theta$ and $z$ under $p$ are in the same family as their variational counterparts. Up to a constant independent of the variation parameters $\phi$ and $\gamma$, the KL divergence between $p$ and $q$ gives a lower bound on the posterior log likelihood. This is known as the ELBO, and (though nonconvex), can be optimized with coordinate-wise gradient ascent. The parameters of the model - notably the per-author topics - can  be fit using maximum likelihood methods. There are a few subleties required to accomodate the multi-class supervision, which we defer to the appendix. The updates follow \cite{wang2009simultaneous} very closesly, and in the interest of brevity, are omitted. 
+The model was implemented in C++, and based upon Chong Wang's code accompanying \cite{wang2009simultaneous}. In addition to the MAD Topic Model, our code supports $L1$ penalization and stochastic variational inference. Neither extensions proved particularly effective, for reasons discussed in the appendix. 
 \section{Evaluation}
 
-
+\section{Conclusions}
 
 \newpage
 \bibliography{writeup}
