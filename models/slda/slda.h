@@ -78,9 +78,10 @@ public:
     void init(double epsilon2, int * num_topics_, const corpus * c);
     void v_em(corpus * c, const settings * setting,
               const char * start, const char * directory);
-    void updatePrior(double *** var_gamma, const settings * setting);
+    void updatePrior(double *** var_gamma, const settings * setting, corpus * c);
     void globalPrior(double *** var_gamma, const settings * setting);
     void fitDirichlet(gsl_matrix * mat);
+    void updatePriorSimple(double *** var_gamma, const settings * s);
 
 
     void save_model(const char * filename);
@@ -102,7 +103,8 @@ public:
 
     // mle global computes the dictionary updates
     // mle logistic computes logistic repression updates
-    void mle_logistic( std::vector<suffstats *> ss, double rho, const settings * setting);
+    void mle_logistic( std::vector<suffstats *> ss, double rho, 
+        const settings * setting, std::vector<int> docs);
     void mle_global(vector<suffstats *> ss, double rho, const settings * setting);
 
     void infer_only_2(corpus * c, const settings * setting, const char * directory);

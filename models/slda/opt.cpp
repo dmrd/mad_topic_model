@@ -182,6 +182,8 @@ void dr_df(const gsl_vector * x, void * opt_param, gsl_vector * df)
 void dr_fdf(const gsl_vector * x, void * opt_param, double * f, gsl_vector * df)
 {
     *f = dr_f(x, opt_param);
+    for (int i = 0; i < x->size;  i++)
+        cout << "x " << x->data[i] << "\n";
     cout << "f " << *f << "\n";
 
     dr_df(x,opt_param,df);
@@ -467,6 +469,8 @@ int * sample(std::vector<double> prob, int trials, gsl_rng * rng)
 }
 
 
+
+
 void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
    {
 
@@ -484,11 +488,12 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
     gsl_rng * rng = gsl_param->rng;
     int* stoch_authors;
 
-    if (gsl_param->sample_authors)
+    if (false)//(gsl_param->sample_authors)
          stoch_authors = sample(author_prob, author_trials, rng);
     else
     {
         author_trials = model->num_classes-1;
+        author_prob =  std::vector<double>(author_trials,0);
         stoch_authors = new int[author_trials];
         for (size_t a = 0; a < author_trials; a++)
         {
@@ -497,12 +502,21 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
         }
     }
 
-    int* stoch_docs =  sample(doc_prob, author_trials, rng);
+    int* stoch_docs =  new int[doc_trials];
+
+    for (size_t d = 0; d < doc_trials; d++)
+    {
+        stoch_docs[d] = gsl_param->stoch_docs[d];
+    }
+
+    if (false)
+        sample(doc_prob, author_trials, rng);
 
     gsl_vector_set_zero(df);
     gsl_vector * df_tmp = gsl_vector_alloc(df->size);
 
     double a1 = 0.0, a2 = 0.0, g,t0, dp,lp;
+    dp = 1/((double)doc_trials); //uniform sample
     int k, d, j, l, idx, t, di,li;
 
 
@@ -518,7 +532,7 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
         for (li = 0; li < author_trials; li++)
         {
             l =  stoch_authors[li];
-            dp = author_prob[li];
+            lp = author_prob[li];
 
             for (k = 0; k < model->num_topics[t]; k++)
             {
@@ -534,8 +548,7 @@ void softmax_df_stoch(const gsl_vector * x, void * opt_param, gsl_vector * df)
     for (di = 0; di < doc_trials; di++)
     {
         d = stoch_docs[di];
-        dp = doc_prob[di];
-
+        //dp = doc_prob[di];
         for (t = 0; t < model->num_word_types; t++) {
             for (k = 0; k < model->num_topics[t]; k++)
             {

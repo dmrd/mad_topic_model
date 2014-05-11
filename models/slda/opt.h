@@ -90,6 +90,8 @@ struct stoch_opt_parameter
 	int author_trials;
     int doc_trials;
 
+	std::vector<int> stoch_docs;
+
 	std::vector<double> author_prob;
 	std::vector<double> doc_prob;
 	
