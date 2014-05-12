@@ -415,9 +415,8 @@ gsl_vector *dirichlet_mle_descent(gsl_matrix *D) {
 
         }
         f = -s->f;
-        //if ((opt_iter-1) % 10 == 0)
-
-            //printf("step: %02d -> f: %f\n", opt_iter-1, f);
+        if ((opt_iter-1) % 10 == 0)
+            printf("step: %02d -> f: %f\n", opt_iter-1, f);
 
     } while (status == GSL_CONTINUE && opt_iter < 4000);
 

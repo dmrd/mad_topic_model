@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
         char * setting_filename = argv[5];
         setting.read_settings(setting_filename);
 
-        double alpha = atof(argv[6]);
+        double alpha = .1; //atof(argv[6]);
         int * num_topics = new int[num_word_types];
 
         char * init_method = argv[7];
@@ -77,6 +77,10 @@ int main(int argc, char* argv[])
 
     if (strcmp(argv[1], "inf") == 0)
     {
+        slda model;
+
+        char * model_filename = argv[6];
+        model.load_model(model_filename);
 
         int num_word_types = (int)(atof(argv[2]));
         corpus * c = new corpus(num_word_types);
@@ -88,14 +92,13 @@ int main(int argc, char* argv[])
         char * setting_filename = argv[5];
         setting.read_settings(setting_filename);
 
-        char * model_filename = argv[6];
+        
         char * directory = argv[7];
         printf("\nresults will be saved in %s\n", directory);
         make_directory(directory);
 
         c->findDocsPer();
 
-        slda model;
         model.load_model(model_filename);
         model.infer_only(c, &setting, directory);
     }

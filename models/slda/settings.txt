@@ -1,4 +1,4 @@
-var max iter 50
+var max iter 35
 var convergence 1e-3
 em max iter 25
 em convergence 1e-4

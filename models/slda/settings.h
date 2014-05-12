@@ -41,6 +41,7 @@ struct settings
     bool USE_L1;
     double L1_PENALTY;
     bool ONE_TOPIC;
+    bool ORIGINAL;
 
     void read_settings(char* filename)
     {
@@ -48,9 +49,9 @@ struct settings
         char alpha_action[100];
 
         int smoothed_int;
-        BATCH_SIZE = 4;
-        BIG_BATCH_SIZE = 10;
-        ONE_TOPIC = false;
+        this->BATCH_SIZE = 4;
+        this->BIG_BATCH_SIZE = 10;
+        this->ONE_TOPIC = false;
 
 
         fileptr = fopen(filename, "r");
@@ -65,8 +66,8 @@ struct settings
         fscanf(fileptr, "smooth weight %f\n", &this->SMOOTH_WEIGHT);
         fscanf(fileptr, "var min iter %d\n", &this->EM_MIN_ITER);
 
-        USE_L1 = false;
-        L1_PENALTY = 0;// .01; //.01;
+        this->USE_L1 = false;
+        this->L1_PENALTY = 0;// .01; //.01;
         // read in not working
         printf("smoothed, %d", smoothed_int);
         printf("min iter %d", this->EM_MIN_ITER);
@@ -77,6 +78,7 @@ struct settings
         this->EM_MIN_ITER = 10;
         this->TOPIC_SMOOTH = false;//false;
         this->STOCHASTIC = false; 
+        this->ORIGINAL = true;
 
 
         if (strcmp(alpha_action, "fixed") == 0)
