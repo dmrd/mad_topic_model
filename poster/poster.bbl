@@ -1,14 +1,15 @@
 \begin{thebibliography}{1}
-\providecommand{\natexlab}[1]{#1}
-\providecommand{\url}[1]{\texttt{#1}}
-\expandafter\ifx\csname urlstyle\endcsname\relax
-  \providecommand{\doi}[1]{doi: #1}\else
-  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Wang et~al.(2009)Wang, Blei, and Li]{wang2009simultaneous}
-Chong Wang, David Blei, and Fei-Fei Li.
+\bibitem{termite}
+J.~Chuang, C.~D. Manning, and J.~Heer.
+\newblock Termite: {V}isualization {T}echniques for {A}ssessing {T}extual
+  {T}opic {M}odels.
+\newblock In {\em Advanced Visual Interfaces}, 2012.
+
+\bibitem{wang2009simultaneous}
+C.~Wang, D.~Blei, and F.-F. Li.
 \newblock Simultaneous {I}mage {C}lassification and {A}nnotation.
-\newblock In \emph{Computer Vision and Pattern Recognition, 2009. CVPR 2009.
+\newblock In {\em Computer Vision and Pattern Recognition, 2009. CVPR 2009.
   IEEE Conference on}, pages 1903--1910. IEEE, 2009.
 
 \end{thebibliography}

@@ -86,6 +86,32 @@
 \institute{Princeton University, Department of Computer Science} % Institution(s)
 
 %----------------------------------------------------------------------------------------
+\makeatletter
+\renewcommand{\itemize}[1][]{%
+  \beamer@ifempty{#1}{}{\def\beamer@defaultospec{#1}}%
+  \ifnum \@itemdepth >2\relax\@toodeep\else
+    \advance\@itemdepth\@ne
+    \beamer@computepref\@itemdepth% sets \beameritemnestingprefix
+    \usebeamerfont{itemize/enumerate \beameritemnestingprefix body}%
+    \usebeamercolor[fg]{itemize/enumerate \beameritemnestingprefix body}%
+    \usebeamertemplate{itemize/enumerate \beameritemnestingprefix body begin}%
+    \list
+      {\usebeamertemplate{itemize \beameritemnestingprefix item}}
+      {\def\makelabel##1{%
+          {%
+            \hss\llap{{%
+                \usebeamerfont*{itemize \beameritemnestingprefix item}%
+                \usebeamercolor[fg]{itemize \beameritemnestingprefix item}##1}}%
+          }%
+        }%
+      }
+  \fi%
+  \beamer@cramped%
+  \justifying% NEW
+  %\raggedright% ORIGINAL
+  \beamer@firstlineitemizeunskip%
+}
+\makeatother
 
 \begin{document}
 
@@ -109,9 +135,9 @@
 
 \begin{alertblock}{Goals}
 \begin{itemize}
-\item Classify author writing style in a wide range of media.
-\item Extract compact representation of stylistic tendency.
-\item Determine which features are most indicative of writing style.
+\item Classify author writing style across a wide range of lexical input.
+\item Determine which features are most characteristic of authors' writing styles.
+\item Extract compact representations of per-author stylistic tendency.
 \end{itemize}
 \end{alertblock}
 
@@ -125,14 +151,14 @@ In the \textit{authorship detection} problem, one is given:
 \begin{itemize}
 \item A set of documents labeled (by author) on which to train.
 \item A set of anonymized documents to classify.
-\end{itemize} Methods for authorship detection traditionally depended on careful feature extraction and rather black-box methods. Hence, they rely on extensive domain specific knowledge, and can be difficult to decipher.
+\end{itemize} Methods for authorship detection traditionally depend on careful feature extraction and rather black-box methods. Hence, they rely on extensive domain specific knowledge, and can be difficult to decipher.
 
 We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $n$-gram features (e.g., part-of-speech tags, meter). MAD fits separate topic models to each of these $n$-gram vocabularies and  combines the models through a multi-class logistic regression classifier. After fitting the topic model parameters, new documents can be classified using the multi-class component. As a by-product, MAD also breaks stylistic features into vocabularies over topics, creating a compact representation of stylistic tendency.
 
 \begin{figure}
 \centering
 \includegraphics[width=\linewidth]{nll.png}
-\caption{MAD's increasing Negative Log Likelihood (NLL) over time.}
+\caption{MAD increases Negative Log Likelihood (NLL) while training.}
 \end{figure}
 
 \end{block}
@@ -195,7 +221,7 @@ We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $
   \end{tikzpicture}
   \caption{Graphical Model for the MAD Topic Model}
 \end{figure}
-\small The MAD topic model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with an Author Topic Model, and extends both to account for multiple word types. The model is based on variational inference, following the coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
+The MAD Topic Model combines the SLDA algorithm presented in \cite{wang2009simultaneous} with an Author Topic Model, and extends both to account for multiple word types. The model is based on variational inference, following the coordinate ascent updates in \cite{wang2009simultaneous}. Stochastic variational inference was also tested, but proved impractical for these rather small data sets. 
 
 \end{block}
 
@@ -210,6 +236,8 @@ We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Features}
+
+MAD works on $n$-grams of stylistic features, such as part-of-speech tags and syllable counts.
 
 \begin{figure}
 \centering
@@ -228,10 +256,10 @@ We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $
 %----------------------------------------------------------------------------------------
 %	IMPORTANT RESULT
 %----------------------------------------------------------------------------------------
-
+\vspace{-20mm}
 \begin{alertblock}{Summary}
 
-The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation to identify authorship in documents with many separate types (``multivalent") of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
+The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation to identify authorship in documents with many separate types (``multivalent'') of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
 \end{alertblock} 
 
 %----------------------------------------------------------------------------------------
@@ -243,10 +271,10 @@ The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet 
 %----------------------------------------------------------------------------------------
 %	MATHEMATICAL SECTION
 %----------------------------------------------------------------------------------------
-
+\vspace{-29mm}
 \begin{block}{Data}
 
-To collect data for training and testing, we wrote Python scrapers for Project Gutenberg, Nassau Weekly, and Quora. 
+We focused on three corpora: Project Gutenberg, Nassau Weekly, and Quora. 
 
 \vspace{5 mm}
 
@@ -254,17 +282,17 @@ To collect data for training and testing, we wrote Python scrapers for Project G
 \caption{Datasets collected for training and testing}
 \centering
 \begin{tabular}{ c | c | c }
-  Source & Authors & Docs/Author \\
+  Source & Authors & Documents \\
   \hline
-  Project Gutenberg & 5 & 50 \\
-  Nassau Weekly & 550 & 200 \\
-  Quora & 1600 & 100 \\
+  Project Gutenberg & 5 & 250 \\
+  Nassau Weekly & 200 & 550 \\
+  Quora & 100 & 1600 \\
 \end{tabular}
 \end{table}
 
 \vspace{10 mm}
 
-Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from the campus publication. Quora captures responses from top users on the question-answer site. The diversity in topic, language, and length challenges our model to detect consistent features in such a variety of contexts.
+Project Gutenberg contains excerpts from fictional books. Nassau Weekly features narrative \& editorial articles from a campus publication. Quora captures responses a question-answer site. Diversity in topic and length challenges our model to detect consistent features in a variety of contexts.
 
 \end{block}
 
@@ -278,11 +306,15 @@ Project Gutenberg contains excerpts from fictional books. Nassau Weekly features
 %	RESULTS
 %----------------------------------------------------------------------------------------
 
+\vspace{-29mm}
 \begin{block}{Results}
 
+Preliminary results show that MAD fares worse than alternative classification schemes. However, MAD's topic models can be used to extract compact representations of stylistic tendency.
 
-\small
-\indent Unfortunately, preliminary results show that which MAD fares far worse as using the same features with another classification scheme. This is consistent with recent findings that suggest that a Pitman-Yor process better captures power law frequencies in language use than Dirichlet methods. Nevertheless, MAD's topic models over the $n$-gram stylistic features can be used to extract compact representations of stylistic tendency and discern which features are most indicative of individual writing style.
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{results.png}
+\end{figure}
 
 \end{block}
 
@@ -304,15 +336,17 @@ Project Gutenberg contains excerpts from fictional books. Nassau Weekly features
 
 \begin{block}{Visualization}
 
-The MAD Topic Model generates topics over $n$-grams of stylistic features, which in turn highlights writing's implicit structure. We used the Termite visualization tool to generate graphical representations of our topic models.
+The MAD Topic Model generates topics over $n$-grams of stylistic features, which in turn highlights the underlying stylistic structure of the documents.
 
+\vspace{5mm}
 \begin{figure}
 \centering
 \includegraphics[width=\linewidth]{termite.png}
-\caption{A topic model for word count (between punctuation) $n$-grams. Topic 21 represents short, staccato sentences.}
+\caption{A topic model for word count (between punctuation) $n$-grams. Topic 21 represents short, staccato sentences. Graphic generated with the Termite tool \citep{termite}.}
 \end{figure}
-
 \end{block}
+
+\vspace{-5mm}
 
 %----------------------------------------------------------------------------------------
 %	ADDITIONAL INFORMATION
@@ -320,7 +354,11 @@ The MAD Topic Model generates topics over $n$-grams of stylistic features, which
 
 \begin{block}{Conclusion}
 
-Our (short) conclusion.
+\begin{itemize}
+\item The MAD Topic Model underperformed compared to alternative classification schemes.
+\item However, MAD remains useful as a means of generating topic models over stylistic features and discovering the hidden structure of natural language.
+\item MAD's performance suggests that the topic model analogy may not be appropriate for stylistic features, at least in the classification setting.
+\end{itemize}
 
 \end{block}
 
@@ -330,13 +368,20 @@ Our (short) conclusion.
 
 % \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
 
+\begin{block}{Acknowledgements}
+Thanks to Chong Wang, whose sLDA codebase served as a starting point for the MAD Topic Model, as well as to David Blei for taking the time to consult with us on potential methods.
+\end{block}
+
+% \setbeamercolor{block title}{fg=BreakfastRed,bg=white} % Change the block title color
+
 \begin{block}{References}
-\small
+\footnotesize
 \bibliography{poster}
-\bibliographystyle{plainnat}
+\bibliographystyle{abbrv}
 
 \end{block}
 
+\vspace{-4mm}
 \begin{center}
 \includegraphics[width=0.5\linewidth]{PU-long.jpg}
 \end{center}

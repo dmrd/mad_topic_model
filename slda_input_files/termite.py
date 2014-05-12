@@ -33,6 +33,6 @@ if __name__ == "__main__":
         term_topic = file('term-topic-matrix' + str(word_type) + '.txt', 'w+')
         for i in range(results['size of vocab']):
             for j in range(results['number of topics']):
-                n = e ** results['vocab distribution'][i][j]
+                n = e ** results['vocab distribution'][j][i]
                 term_topic.write(str(n) + '\t')
             term_topic.write('\n')

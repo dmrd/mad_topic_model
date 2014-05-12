@@ -29,4 +29,34 @@ ylabel=NLL ($10^6$),
 \end{axis}
 \end{tikzpicture}
 
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[
+ybar,
+nodes near coords,
+nodes near coords align={vertical},
+bar width=9pt,
+enlarge x limits=0.3,
+ylabel=Classification Accuracy (\%),
+xtick=data,
+xtick pos=left,
+symbolic x coords={Quora, Nass, Gutenberg},
+legend style={at={(0.5,1.15)},
+anchor=north,legend columns=-1},
+]
+% Baseline
+\addplot coordinates {(Quora, 12) (Nass, 7) (Gutenberg, 20)};
+
+% Ours
+\addplot coordinates {(Quora, 20) (Nass, 22) (Gutenberg, 62)};
+% SVM
+\addplot coordinates {(Quora, 32) (Nass, 29) (Gutenberg, 97)};
+% RF
+\addplot coordinates {(Quora, 30) (Nass, 25) (Gutenberg, 94)};
+% Logistic
+\addplot coordinates {(Quora, 35) (Nass, 33) (Gutenberg, 96)};
+\legend{Baseline, MAD, SVM, Random Forest, Logistic}
+\end{axis}
+\end{tikzpicture}
+
 \end{document}
