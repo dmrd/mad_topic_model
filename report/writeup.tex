@@ -55,7 +55,7 @@
 \maketitle
 \large
 \begin{abstract}
-We draw a lot on \citep{Blei2007}.
+The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation \citep{Blei2003} to identify authorship in documents with many separate types (``multivalent'') of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. The topic model approach allows MAD to be used both for classification of documents and exploration of stylistic features. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
 \end{abstract}
 
 \section{Introduction}
@@ -64,14 +64,14 @@ In the \textit{authorship detection} problem, one is first given a set of docume
 
 \section{Literature Review}
 
-	The majority of existing literature on stylometric analysis focuses on accurate author classification\cite{stamatatos2009survey}, often indentify plagiarism\cite{stamatatos2009intrinsic},\cite{Stein}. Existing methods focus on careful feature engineering, incorporating synonym use, part of speech tags, and sentence structure \cite{stamatatos2009survey}. Classification then amounts to feeding these features through generic classifiers, most often SVMs, Logistic Regression, and Random Forests. More sophisticated methods employ feature transformations (see the Writeprints method proposed by \cite{abbasi2008writeprints}). While these techniques are very powerful for classification, they fail to produce interpretable descriptions of each authors probabilistic tendencies.
+The majority of existing literature on stylometric analysis focuses on accurate author classification \cite{stamatatos2009survey}, particularly for plagiarism identification \cite{stamatatos2009intrinsic} \cite{Stein}. Existing methods focus on careful feature engineering, incorporating synonym use, part-of-speech tags, and sentence structure \cite{stamatatos2009survey}. Classification then amounts to feeding these features through generic classifiers, most often SVMs, Logistic Regression, and Random Forests. More sophisticated methods employ feature transformations (see the Writeprints method proposed by \citet{abbasi2008writeprints}). While these techniques are very powerful for classification, they fail to produce interpretable descriptions of each author's probabilistic tendencies.
 
-	In this paper, we use probabilistic modeling to extract better insight into the factors that differentiate literary style. Our starting point is the Latent Dirichlet Allocation topic model \cite{Blei2003}, which describes topics as categorial distributions over words, and describes documents as proportions of topics.Topic models have become extremely popular in the field ``Digital Humanities'', and scholars in the humanities are beginning to use LDA to understand massive document corpora \cite{blei2012topic}. Here, we will adapt topic modeling for extracting stylistic insight. For stylometric analysis, we will regard stylistic tendencies as a topics, in the sense that the correspond to categorical distributions over stylistic features. 
+	In this paper, we use probabilistic modeling to extract better insight into the factors that differentiate literary style. Our starting point is the Latent Dirichlet Allocation topic model \cite{Blei2003}, which describes topics as categorial distributions over words, and describes documents as proportions of topics. Topic models have become extremely popular in the field of ``Digital Humanities'', and scholars in the humanities are beginning to use LDA to understand massive document corpora \cite{blei2012topic}. Here, we adapt topic modeling to extract stylistic insight. For stylometric analysis, we regard stylistic tendencies as topics in the sense that they correspond to categorical distributions over stylistic features.
 
-	sLDA\cite{Blei2007} extends LDA to the supervised setting, where per-document topic proportions are linked to a generalized linear model response \cite{mccullagh1984generalized}. The original sLDA studied the details Poisson and Gaussian responses, and \cite{wang2009simultaneous} presents an approximate inference algorithm for a softmax response with applications to image anotation. \cite{rosen2004author} incorporate authorship into the LDA framework by assigning topic distributions on a per-author, rather than per topic basis. This method neglects the possibility that author writing style may vary over documents, and is best suited to cases when documents share many authors. Thus, this paper will folow  \cite{wang2009simultaneous} and extend the softmax response LDA from to incorporate separate classes of stylometric features - for example, meter, etymology, and parts of speech. 
+	sLDA \cite{Blei2007} extends LDA to the supervised setting, where per-document topic proportions are linked to a generalized linear model response \cite{mccullagh1984generalized}. The original sLDA focused on Poisson and Gaussian responses, and \cite{wang2009simultaneous} presents an approximate inference algorithm for a softmax response with applications to image annotation. \citet{rosen2004author} incorporate authorship into the LDA framework by assigning topic distributions on a per-author, rather than per topic basis. This method neglects the possibility that author writing style may vary over documents, and is best suited to cases when documents share many authors. Thus, this paper will follow  \citet{wang2009simultaneous} and extend the softmax response LDA to incorporate separate classes of stylometric features (e.g., meter, etymology, and part-of-speech). 
  
 \section{Data}
-To collect data for training and testing, we wrote scrapers for Project Gutenberg, Quora, and Nassau Weekly. We selected these three data sources for their diversity in topic, language, and length. For example, Project Gutenberg features lengthy narrative texts while Quora features shorter comments in colloquial language. With Nassau Weekly we see a mix: modern prose in a mix of narrative and editorial styles. Because of this diversity, these corpora provide ample training and testing data for our models.
+To collect data for training and testing, we wrote scrapers for Project Gutenberg, Quora, and the Nassau Weekly. We selected these three data sources for their diversity in topic, language, and length. For example, Project Gutenberg features lengthy narrative texts while Quora features shorter comments in colloquial language. With Nassau Weekly we see a mix: modern prose in a mix of narrative and editorial styles. Because of this diversity, these corpora provide ample training and testing data for our models.
 
 We implemented our scrapers in Python. The Project Gutenberg dataset features excerpts from fiction books by five authors. The Quora dataset features about 1600 comments from roughly 100 popular Quora users. The users were selected based on online reports for ``most followed" users on the network. Because Quora is a question-answer web site, this content is mostly informative in nature. Depending on the thoroughness of a user's answer, the length can vary from a single word to several paragraphs.
 
@@ -89,7 +89,7 @@ We incorporated six different stylometric features, each of which was composed i
 \item Word counts, i.e., the total number of words between pieces of punctuation.
 \end{enumerate}
 
-On top of these primitives, we also developed an algorithm to extract meter, inspired by \citet{Genzel}. While meter is traditionally a poetic quality (and is treated as such in \citep{Genzel}), we brought it to prose by focusing on the classical meter styles of Iambic, Spondee, etc., all of which are based on 2- or 3-syllable `feet'. We viewed meter as a function of stresses and specifically focused on the stress $(2\times3)=6$-grams, appending these $6$-grams with two additional bits: the first to indicate distance from the latest comma, and the second to indicate distance from the latest piece of punctuation. The full algorithm can be found in the Appendix.
+On top of these primitives, we also developed an algorithm to extract meter, inspired by \citet{Genzel}. While meter is traditionally a poetic quality (and is treated as such in \citep{Genzel}), we brought it to prose by focusing on the classical meter styles of Iambic, Spondee, etc., all of which are based on 2- or 3-syllable `feet'. We viewed meter as a function of stresses and specifically focused on the stress $(2\times3)=6$-grams, appending these $6$-grams with two additional bits: the first to indicate distance from the latest comma, and the second to indicate distance from the latest piece of punctuation.
 
 In total, this composed seven stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $6$-grams were produced).
 
@@ -121,7 +121,39 @@ The model is fit using variational inference \cite{hoffman2013stochastic}, which
 
 Our implementation of MAD extended Wang's sLDA implementation by 1000 lines of C++, so preliminary testing focused on establishing the algorithm's correctness. First, we ensured that our model likelihood increases during variational inference. Next, we simulated documents according to our generative process, and verified that we could classify such documents with 100\% accuracy, provided that each document had a fairly distinct distribution over topics. 
 
-For each of the three corpora, we tested the classification accuracy sLDA against an 80/20 train/test split. We restricted our tests to authors above a certain threshold of documents, with this threshold varying by corpus. As a benchmark, we tested sLDA against Random Forest, Logistic Regression, and SVMs, applied to the $n$-grams representations of each document. In each test, sLDA significantly outperformed random guessing, but underperformed compared to the other benchmark methods. Full results can be seen in Figure~\ref{fig:results}.
+For each of the three corpora, we tested the classification accuracy sLDA against an 80/20 train/test split. We restricted our tests to authors above a certain threshold of documents, with this threshold varying by corpus. As a benchmark, we tested sLDA against Random Forest, Logistic Regression, and SVMs, applied to the $n$-grams representations of each document. In each test, sLDA significantly outperformed random guessing, but underperformed compared to the other benchmark methods. Full results can be seen in Figure~\ref{fig:results} on Page~\pageref{fig:results}.
+
+\section{Exploration}
+
+While MAD did not perform particularly well for classification, it's true usefulness is in the realm of exploration: by creating topic models over vocabularies of $n$-gram stylistic features, MAD helps uncover hidden syntactic and stylometric structure both of and across individual authors.
+
+To visualize the generated topic models, we adapted the Termite tool \citep{Termite}, which allowed us to see the marginal distributions of the various $n$-grams (for a given word type, such as part-of-speech tag) as well as the distributions of the vocabularies across the topics.
+
+As an example of the exploratory power of MAD, consider the topic model for the `runs of syllables' feature extracted from the Gutenberg dataset, which contains long-form documents from famous authors, such as Jane Austen's \textit{Pride and Prejudice} and Mark Twain's \textit{Huckleberry Finn}. The Termite representation of the topic model can be seen in Figure~\ref{fig:termite} on Page~\pageref{fig:termite}.
+
+MAD assigns each author its own distribution over topics. In this case, the most heavily-used topic for Jane Austen was Topic 0; distinctive features for this topic (i.e., those that do not appear in any other topic) are of the form (1, 3, 1, 1) and (3, 1, 1, 1)--that is, runs of one-syllable words broken up by a three-syllable word. Meanwhile, the most heavily-used topic for Mark Twain was Topic 27, with distinctive features of the form (1, 1, 1, `?') and (1, 1, `?', 2)--that is, questions composed of mono-syllabic phrases.
+
+These patterns can be found quite easily in the writings of the two authors. For example, consider the famous first sentence of \textit{Pride and Prejudice}: ``It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife." This sentence contains the (1, 3, 1, 1) and (3, 1, 1, 1) patterns with the phrase ``in pos-ses-sion of a wife". In another famous sentence, ``Pride relates more to our opinion of ourselves, vanity to what we would have others think of us.", we again see the (3, 1, 1, 1) pattern with ``van-it-y to what we".
+
+Meanwhile, the mono-syllabic question-based structure of Twain is prevalent in the Southern drawls of his main characters. For example, in Line 153, we have: ``Who is you? Whar is you?", which contains the (1, 1, 1, `?') pattern twice in immediate succession. Similarly, on Line 256, we have: ``Do 'bout him?". Notice that the character's accent transforms the two-syllable ``about" to the mono-syllabic ``'bout", again demonstrating the topic model's ability to capture the structure of Twain's dialogue. These results are also presented in Table~\ref{tab:distinctive_ngrams}.
+
+Further analysis could be performed on and across the topic models for part-of-speech tags, etymology, etc. However, even with this small example, the usefulness of MAD for exploratory and explanatory purposes is immediately evident.
+
+\begin{table}[ht] 
+\centering
+\begin{tabular}{ c | c | c | c }
+  Author & Primary Topic & Distinctive $n$-gram & Matching Text \\
+  \hline
+  Mark Twain & Topic 0 & (1, 1, 1, `?') & ``Who is you?", ``Do 'bout him?" \\
+  Jane Austen & Topic 27 & (3, 1, 1, 1) & ``pos-ses-sion of a wife", ``van-it-y to what we" \\
+\end{tabular}
+\caption{Distinctive $n$-grams for `runs of syllables'.}
+\label{tab:distinctive_ngrams}
+\end{table}
+
+\section{Conclusions}
+
+\newpage
 
 \begin{figure}
 \centering
@@ -157,33 +189,14 @@ anchor=north,legend columns=-1},
 \label{fig:results}
 \end{figure}
 
-\section{Exploration}
-
-While MAD did not perform particularly well for classification, it's true usefulness is in the realm of exploration: by creating topic models over vocabularies of $n$-gram stylistic features, MAD helps uncover hidden syntactic and stylometric structure both of and across individual authors.
-
-To visualize the generated topic models, we adapted the Termite tool \citep{Termite}, which allowed us to see the marginal distributions of the various $n$-grams (for a given word type, such as part-of-speech tag) as well as the distributions of the vocabularies across the topics.
-
-As an example of the exploratory power of MAD, consider the topic model for the `runs of syllables' feature extracted from the Gutenberg dataset, which contains long-form documents from famous authors, such as Jane Austen's \textit{Pride and Prejudice} and Mark Twain's \textit{Huckleberry Finn}. The Termite representation of the topic model can be seen in Figure~\ref{fig:termite}.
-
-MAD assigns each author its own distribution over topics. In this case, the most heavily-used topic for Jane Austen was Topic 0, which contains features of the form (1, 3, 1, 1) and (3, 1, 1, 1)--that is, runs of one-syllable words broken up by a three-syllable word. Meanwhile, the most heavily-used topic for Mark Twain was Topic 27, which contains features of the form (1, 1, 1, '?') and (1, 1, '?', 2)--that is, questions ending with mono-syllabic phrases.
-
-These patterns can be found quite easily in the writings of the two authors. For example, consider the famous first sentence of \textit{Pride and Prejudice}: ``It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife." This sentence contains the (1, 3, 1, 1) and (3, 1, 1, 1) patterns with the phrase ``in pos-ses-sion of a wife". In another famous sentence, ``Pride relates more to our opinion of ourselves, vanity to what we would have others think of us.", we again see the (3, 1, 1, 1) pattern with ``van-it-y to what we".
-
-Meanwhile, the mono-syllabic question-based structure of Twain is prevalent in the Southern drawls of his main characters. For example, in Line 153, we have: ``Who is you? Whar is you?", which contains the (1, 1, 1, '?') pattern twice in immediate succession. Similarly, on Line 256, we have: ``Do 'bout him?". Notice that the character's accent transforms the two-syllable ``about" to the mono-syllabic ``'bout", again demonstrating the topic model's ability to capture the structure of Twain's dialogue.
-
-Further analysis could be performed on and across the topic models for part-of-speech tags, etymology, etc. However, even with this small example, the usefulness of MAD for exploratory and explanatory purposes is immediately evident.
-
 \begin{figure}
 \centering
-\includegraphics[width=\linewidth]{termite.png}
+\includegraphics[width=0.5\linewidth]{termite.png}
 \caption{Termite visualization for `runs of syllables' $n$-grams on the Gutenberg corpus. The $x$-axis indicates topic indices, while the $y$-axis indicate $n$-grams. Size of circle corresponds to $n$-gram importance within a topic. Austen's primary topic (0) is highlighted in blue, with Twain's (27) in orange.}
 \label{fig:termite}.
 \end{figure}
 
-\section{Conclusions}
-
 \newpage
-
 
 \begin{figure}[h!]
   \centering
@@ -241,7 +254,9 @@ Further analysis could be performed on and across the topic models for part-of-s
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
+
 \newpage
+
 \bibliography{writeup}
 \bibliographystyle{plainnat}
 
@@ -249,11 +264,9 @@ Further analysis could be performed on and across the topic models for part-of-s
 
 \begin{appendix}
 \small
-\section{Scrapers}
-\section{Meter Algorithm}
 \section{Model Discussion}
 
-Here we adopt the following notation. Let $d$ be a document, $\mathcal{D}$ be the set of documents, and $D$ the number of documents. In general, lower case letters will denote instances, calligraphic letters sets, and upper case letters cardinalities: $t$ will correspond to word types, $n$ to words, and $k$ to topics, $a$author. We will use subscripts in the natural way: $\mathcal{D}_a$ is the set of documents writter by $a$, $K_t$ are the number of topics for type $t$.
+We adopt the following notation: let $d$ be a document, $\mathcal{D}$ be the set of documents, and $D$ the number of documents. In general, lower case letters will denote instances, calligraphic letters sets, and upper case letters cardinalities: $t$ will correspond to word types, $n$ to words, and $k$ to topics, $a$author. We will use subscripts in the natural way: $\mathcal{D}_a$ is the set of documents writter by $a$, $K_t$ are the number of topics for type $t$.
 
 \subsection{Parameter Fitting}
 
