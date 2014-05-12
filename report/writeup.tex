@@ -113,7 +113,7 @@ For illustrative purposes, Table~\ref{tab:sample_ngrams} presents several common
 
 To explore our data, we feed the extracted features as bags of $n$-grams to a novel LDA extension, the Multivalent Authorship Detection (MAD) Topic Model. The MAD Topic Model combines the sLDA algorithm presented in \cite{wang2009simultaneous} and \cite{Blei2007}, with the Author Topic Model presented in \cite{rosen2004author}, extending both of these models to account for multiple word types.  For each word type $t$, MAD posits its own LDA topic model. Unlike conventional LDA, in which each document shares a common Dirichlet prior, MAD gives each author its own Dirichlet prior which can be optimized with coordinate descent. This differs from the Author Topic Model, which treats each author's oeuvre as one contiguous document.
 
-Like sLDA, MAD has a multi-class regression parameter $\eta$; classes are drawn from $\text{softmax}(\eta^T\bar{z})$, where $\overline{z}$ are the average topic assignments for each work. The complete generative process is specified in the Appendix, and the graphical model is show in Figure~\ref{fig:gm}. The key innovation in this model is that it is doubly supervised: first, each author has its own topic proportions, which enforce shared topics between its documents. And second, upon conditioning on the multi-class logistic regression $\eta$, the topic assignments $z$ which contribute to correct classification are given a higher likelihood.  Thus, one would expect that the \emph{more salient} features are selected during inference. It is crucial to note that, during training, authorship is thereby treated as both a known label and a random variable. In the test stage, however, we marginalize over authors, as described in the Appendix.
+Like sLDA, MAD has a multi-class regression parameter $\eta$; classes are drawn from $\text{softmax}(\eta^T\bar{z})$, where $\overline{z}$ are the average topic assignments for each work. The complete generative process is specified in Algorithm~\ref{fig:mad}, and the graphical model is show in Figure~\ref{fig:gm}. The key innovation in this model is that it is doubly supervised: first, each author has its own topic proportions, which enforce shared topics between its documents. And second, upon conditioning on the multi-class logistic regression $\eta$, the topic assignments $z$ which contribute to correct classification are given a higher likelihood.  Thus, one would expect that the \emph{more salient} features are selected during inference. It is crucial to note that, during training, authorship is thereby treated as both a known label and a random variable. In the test stage, however, we marginalize over authors, as described in the Appendix.
 
 The model is fit using variational inference \cite{hoffman2013stochastic}, which we address in detail in the Appendix. After fitting the model, we extract per author distributions over topics and a total corpus distribution over topics. To classify documents, we extract topic assignments by applying LDA with the model parameters fit during training, and feed the topic assignments to the logistic regression classifier. Again, discussion is left to the Appendix. 
 
@@ -196,8 +196,6 @@ anchor=north,legend columns=-1},
 \label{fig:termite}.
 \end{figure}
 
-\newpage
-
 \begin{figure}[h!]
   \centering
   \begin{tikzpicture}
@@ -231,10 +229,11 @@ anchor=north,legend columns=-1},
 	\node[rectangle, inner sep=4mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -8.0mm, xshift=30] {};
 	\node[rectangle, inner sep=4mm, minimum width = 25, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -.2mm, xshift=4] {};
   \end{tikzpicture}
-  \caption{Graphical Model for the MAD Topic Model. Here $\alpha$ and $\lambda$ are Dirichlet parameters governing distribution of topics, and per topic distributions over words. $\theta$, $z$, $\beta$ and $w$ are multinomial distributions for per-document topics, latent topic assignments, per words toics, and observed word. $y$ is a categorical GLM response, with canonical link function and parameter $\eta$. $A$ is the number of authors, $D$ the number of documents, $T$ the number of word types, $N_{dt}$ the number of words of type $t$ in document $d$, and $K_t$ the number of topics over words of type $t$.}
+  \caption{Graphical Model for the MAD Topic Model. $\alpha$ and $\lambda$ are Dirichlet parameters governing distributions of topics and per topic distributions over words respectively. $\theta$, $z$, $\beta$ and $w$ are multinomial distributions for per-document topics, latent topic assignments, per words toics, and observed word. $y$ is a categorical GLM response, with canonical link function and parameter $\eta$. $A$ is the number of authors, $D$ the number of documents, $T$ the number of word types, $N_{dt}$ the number of words of type $t$ in document $d$, and $K_t$ the number of topics over words of type $t$.}
   \label{fig:gm}
   \end{figure}
-  \begin{algorithm}
+
+\begin{algorithm}
 \begin{algorithmic}[1]
 \Procedure{MAD Generative Process}{}
  \State $T$ word types, with $K_t$ topics. $D$ documents, labelled into $A=$ classes, with $T$ separate word counts for each of the $T$ word types. Softmax parameter $\eta_t \in \mathbb{R}^{(A-1)\times\sum_{t=1}^TK_t}$, Dirichlet priors $\{\alpha_{at}\}$ and $\{\lambda_t\}$
@@ -253,9 +252,11 @@ anchor=north,legend columns=-1},
 \EndFor
 \EndProcedure
 \end{algorithmic}
+\caption{The complete generative process for the MAD Topic Model.}
+\label{fig:mad}
 \end{algorithm}
 
-\newpage
+\clearpage
 
 \bibliography{writeup}
 \bibliographystyle{plainnat}
@@ -272,7 +273,7 @@ We adopt the following notation: let $d$ be a document, $\mathcal{D}$ be the set
 
 It is well known that exact inference for LDA requires computing a prohibitive integral \cite{Blei2003}. Instead, the posterior distribution $p(a,w,z,\theta|\alpha,\theta,\lambda,\eta)$ is approximated with a variational family: $q(\theta_{t,d}|\gamma_{t,d})\prod_{(t,n)\in d}q(z_{dt,n}|\phi_{dt,n})$, indexed by parameters $\gamma$ and $\phi$. Here $\theta|\gamma \sim\text{Dirichlet}(\gamma)$ and $z|\phi \sim\text{Multi}(\phi)$, so that complete conditionals of $\theta$ and $z$ under $p$ are in the same family as their variational counterparts. Up to a constant independent of the variation parameters $\phi$ and $\gamma$, the KL divergence between $p$ and $q$ gives a lower bound on the posterior log likelihood. This is known as the ELBO, and (though non-convex), can be optimized with coordinate-wise gradient ascent. The parameters of the model--notably the per-author topics --can be fit using maximum likelihood methods. The updates follow \cite{wang2009simultaneous} very closely, and in the interest of brevity, are omitted.
 
-In each step, Wang's code reinitializes $\phi$ and $\gamma$ at each iteration \cite{wang2009simultaneous}, and then optimizes a fixed point method to convergence before updating global parameters $\beta$ and $\eta$. We also implement a method that keeps $\gamma$ from the past iteration, and then then uses fixed point methods to optimizes $\phi$. This seems to have slightly faster convergence, though it suffers a bit on classification accuracy. We also implement $L_1$ regularization with L-BFGS \cite{liu1989limited} and OWL-QN\cite{andrew2007scalable} \footnote{BFGS is not guaranteed to work with $L_1$ because the objective is not smooth, though it is still found to work well in with $L_1$ penalties practice. OWL-QN was implemented but not thoroughly tested and has some external package dependencies}.
+In each step, Wang's code reinitializes $\phi$ and $\gamma$ at each iteration \cite{wang2009simultaneous}, and then optimizes a fixed point method to convergence before updating global parameters $\beta$ and $\eta$. We also implement a method that keeps $\gamma$ from the past iteration, and then then uses fixed point methods to optimizes $\phi$. This seems to have slightly faster convergence, though it suffers a bit on classification accuracy. We also implement $L_1$ regularization with L-BFGS \cite{liu1989limited} and OWL-QN \cite{andrew2007scalable} \footnote{BFGS is not guaranteed to work with $L_1$ because the objective is not smooth, though it is still found to work well with $L_1$ penalties in practice. OWL-QN was implemented but not thoroughly tested and has some external package dependencies}.
 
 Our code also implements a number of extensions to the algorithm in \cite{wang2009simultaneous}. First, we allow for Maximum Likelihood Estimation of the per-author and global Dirichlet parameters (optimizing the variational lower bound). Both L-BFGS and Fixed Point \cite{minka2000estimating} are supported. We also use a method which gives us the expected topic assignments for authors, if all the authors documents are treated as one combined text: that is, for each word type $t$, $Pr(\text{topic}=k) = \epsilon + \sum_{d\in \mathcal{D}_a}\phi_{nd,t}$, where $\epsilon$ is a smoothing parameter.
 
