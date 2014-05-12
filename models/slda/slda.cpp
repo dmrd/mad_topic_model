@@ -1166,6 +1166,9 @@ double slda::doc_perplexity(document* doc, double ** expAlpha, double *** phi)
     {
         for (n = 0; n < doc->length[t]; n++)
         {
+            if (doc->words[t][n] >= size_vocab[t])
+                continue;
+
             double temp = 0;
             temp= log_prob_w[t][0][doc->words[t][n]] + phi[t][n][0];
             for (k = 1; k < num_topics[t]; k++)      
@@ -1723,11 +1726,34 @@ void slda::infer_only(corpus * c, const settings * setting, const char * directo
 
         document * doc = c->docs[d];
         likelihood = 0;
+        document doc2(num_word_types); 
+        for (t = 0; t < num_word_types; t++)
+        {
+            int counter = 0;
+            for  (size_t nn = 0; nn < doc->length[t]; nn ++)
+            {
+                if (doc->words[t][n]<size_vocab[t])
+                    counter++;
+            }
+            doc2.set_length(t,counter);
+            counter = 0;
+            for  (size_t nn = 0; nn < doc->length[t]; nn ++)
+            {
+                doc2.words[t][counter] = doc->words[t][nn];
+                doc2.counts[t][counter] = doc->counts[t][nn];
+                doc2.total[t] += doc->counts[t][nn];
+
+                if (doc->words[t][n]<size_vocab[t])
+                    counter++;
+
+            }
+        }
 
         for (t = 0; t < num_word_types; t++)
         {
 
-            likelihood += lda_inference(doc, var_gamma[d][t], phi[t], setting,t,-1);
+
+            likelihood += lda_inference(&doc2, var_gamma[d][t], phi[t], setting,t,-1);
 
             memset(phi_m[t], 0, sizeof(double)*num_topics[t]); //zero_initialize
             for (n = 0; n < doc->length[t]; n++)
@@ -2177,7 +2203,7 @@ void slda::load_model_initialize_ss(suffstats* ss, corpus * c, int t)
 
 }
 /*
-double slda::lda_inference_2(document* doc, double* var_gamma, double** phi,
+double slda::infeence_2(document* doc, double* var_gamma, double** phi,
                            const settings * setting, int t, int a)
 {
     int k, n, t; 
@@ -2263,8 +2289,12 @@ double slda::lda_inference(document* doc, double* var_gamma, double** phi,
         for (n = 0; n < doc->length[t]; n++)
         {
             phisum = 0;
+            if (doc->words[t][n] >= size_vocab[t])
+                continue;
+
             for (k = 0; k < num_topics[t]; k++)
             {
+                int word = 
                 oldphi[k] = phi[n][k];
                 phi[n][k] = digamma_gam[k] + log_prob_w[t][k][doc->words[t][n]];
 
@@ -2325,6 +2355,9 @@ double slda::lda_compute_likelihood(document* doc, double** phi, double* var_gam
 
         for (n = 0; n < doc->length[t]; n++)
         {
+            if (doc->words[t][n] >= size_vocab[t])
+                continue;
+            
             if (phi[n][k] > 0)
             {
                 likelihood += doc->counts[t][n]*(phi[n][k]*((dig[k] - digsum) -

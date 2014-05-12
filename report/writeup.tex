@@ -108,33 +108,66 @@ To explore our data  we feed our extracted features as bags of n-grams to a nove
 
 Like SLDA, MAD has a multi-class regression parameter $\eta$, from which classes are drawn from $\text{softmax}(\eta^T\bar{z})$, where $\overline{z}$ are the average topic assignments for each work. The complete generative process is specified in the Appendix, and the graphical model is show in... The key innovation in this model is that it is doubly supervised: first, each author has her own topic proportions, which enforce shared topics between her documents. And second, upon conditioning on the multi-class logistic regression $\eta$, the topic assignments $z$ which contribute to correct classification are given a higher likelihood.  Thus, one would expect that the \emph{more salient} features are selected for during inference. It is crucial to note that, during training, authorship is thereby treated as both a known label and random variable. In the test stage, however, we marginalize over authors, as described in the Appendix.
 
-The model is fit with variational inference, discussed in \cite{wainwright2008graphical}. It is well known that exact inference for LDA requires computing a prohibitive integral \cite{Blei2003}. Instead, the posterior distribution $p(a,w,z,\theta|\alpha,\theta,\lambda,\eta)$ is approximated with a variational family: $q(\theta|\gamma)\prod_{n}q(z|\phi)$, indexed by parameters $\gamma$ and $\phi$. Here $\theta|\gamma \sim\text{Dirichlet}(\gamma)$ and $z|\phi \sim\text{Multi}(\phi)$, so that complete conditionals of $\theta$ and $z$ under $p$ are in the same family as their variational counterparts. Up to a constant independent of the variation parameters $\phi$ and $\gamma$, the KL divergence between $p$ and $q$ gives a lower bound on the posterior log likelihood. This is known as the ELBO, and (though non-convex), can be optimized with coordinate-wise gradient ascent. The parameters of the model--notably the per-author topics --can be fit using maximum likelihood methods. There are a few subtleties required to accommodate the multi-class supervision, which we defer to the appendix. The updates follow \cite{wang2009simultaneous} very closely, and in the interest of brevity, are omitted.
+The model is fit with variational inference, discussed in \cite{wainwright2008graphical}. It is well known that exact inference for LDA requires computing a prohibitive integral \cite{Blei2003}. Instead, the posterior distribution $p(a,w,z,\theta|\alpha,\theta,\lambda,\eta)$ is approximated with a variational family: $q(\theta|\gamma)\prod_{n}q(z|\phi)$, indexed by parameters $\gamma$ and $\phi$. Here $\theta|\gamma \sim\text{Dirichlet}(\gamma)$ and $z|\phi \sim\text{Multi}(\phi)$, so that complete conditionals of $\theta$ and $z$ under $p$ are in the same family as their variational counterparts. Up to a constant independent of the variation parameters $\phi$ and $\gamma$, the KL divergence between $p$ and $q$ gives a lower bound on the posterior log likelihood. This is known as the ELBO, and (though non-convex), can be optimized with coordinate-wise gradient ascent. The parameters of the model--notably the per-author topics --can be fit using maximum likelihood methods. There are a few subtleties required to accommodate the multi-class supervision, which we defer to the appendix. The updates follow \cite{wang2009simultaneous} very closely, and in the interest of brevity, are omitted. 
+
+After fitting the model, we extract per author distributions over topics and total corpus distribution over topics. To classify documents, we extract topic assignments by applying LDA with the model parameters fit during training, and feed the topic assignments to the logistic regression classifier. Further discussion is provided in the appendix. 
 
 The model was implemented in C++, and based upon Chong Wang's code accompanying \cite{wang2009simultaneous}. In addition to the MAD Topic Model, our code supports L1 penalization and stochastic variational inference. Neither extensions proved particularly effective, for reasons discussed in the appendix. 
 \section{Evaluation}
+Note that our implementation of MAD extended Wang's implementation by 1000 C++, so preliminary testing focused on establishing the correctness of our algorithm. First, we ensured that our model likelihood increases during variational inference. Next, we simulated documents according to our generative process, and verified that we could classifiy such documents with 100\% accuracy, provided that each document had a fairly distinct distribution over topics. 
+
+For each of the three corpora, we tested the classification accuracy sLDA against a 80/20 train/test split. We restricted our tests only to authors who had above a certain threshold of documents, which varied on the corpus. As a benchmark, we tested sLDA against Random Forest, Logistic Regression, and SVMs, appied to the back of n-grams representations of each documents. In each test, sLDA significantly outperformed an at random guess, but was outperformed by the other three benchmark methods.
 
 \section{Conclusions}
 
 \newpage
-\bibliography{writeup}
-\bibliographystyle{plainnat}
 
-\newpage
 
-\begin{appendix}
-\section{Scrapers}
-\section{Meter Algorithm}
-\section{}
-\begin{algorithm}
+\begin{figure}[h!]
+  \centering
+  \begin{tikzpicture}
+  \tikzstyle{main}=[circle, minimum size = 10mm, thick, draw =black!80, node distance = 12mm]
+  \tikzstyle{connect}=[-latex, thick]
+  \tikzstyle{box}=[rectangle, draw=black!100]
+    \node[main, fill = white!100] (theta)  {$\theta$ };
+    \node[main] (alpha) [left=of theta] { $\alpha$};
+    \node[main] (z) [right=of theta] {$z$};
+    \node[main, fill = black!10] (w) [right=of z] {$w$};
+    \node[main] (beta) [above=of z]{$\beta$};
+    \node[main] (lambda) [left=of beta]{$\lambda$};
+    \node[main,  fill = black!10] (y) [below=of z,  yshift = 0mm]{$y$};
+    \node[main] (eta) [left=of y, xshift = -3.8mm]{$\eta$};
+    \path (alpha) edge [connect] (theta)
+          (theta) edge [connect] (z)
+          (z) edge [connect] (w)
+          (lambda) edge [connect] (beta)
+          (beta) edge [connect] (w)
+          (eta) edge [connect] (y)
+          (z)   edge [connect] (y);
+    %\draw[->] (z.east) to  [out=-50,in=-130] (y.west) ;
+    \node[rectangle, inner sep=2mm, fit= (z) (w),label=below right:$N_{dt}$, yshift = 5mm, xshift=-7mm] {};
+	\node[rectangle, inner sep=2mm,draw=black!100, fit= (z) (w), yshift = -.6mm] {};
+	 \node[rectangle, inner sep=2mm, fit= (beta),label= right:$K_t$, yshift = -1.4mm, xshift=-1.5mm] {};
+	\node[rectangle, inner sep=2mm,draw=black!100, fit= (beta), yshift = .2mm] {};
+	\node[rectangle, inner sep=8mm, fit= (theta) (z) (w) (y),label=below right:D, yshift = 16mm, xshift=-1.5mm] {};
+	\node[rectangle, inner sep=13mm,minimum height = 25, draw=black!100, fit = (theta) (z) (w), yshift = -10mm, xshift=6] {};
+	\node[rectangle, inner sep=8mm, fit= (alpha) (theta) (z) (w) ,label=left:A, yshift = -2.8mm, xshift=4mm] {};
+	\node[rectangle, inner sep=8mm, minimum width = 60, draw=black!100, fit = (alpha) (theta) (z) (w) , yshift = -1.3mm, xshift=-2.0] {};
+	\node[rectangle, inner sep=4mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -8.0mm, xshift=30] {};
+	\node[rectangle, inner sep=4mm, minimum width = 25, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -.2mm, xshift=4] {};
+  \end{tikzpicture}
+  \caption{Graphical Model for the MAD Topic Model. Here $\alpha$ and $\lambda$ are dirichlet parameters governing distribution of topics, and per topic distributions over words. $\theta$, $z$, $\beta$ and $w$ are multinomial distributions for per-document topics, latent topic assignments, per words toics, and observed word. $y$ is a categorical glm response, with cannonical link function and parameter $\eta$. $A$ is the number of authors, $D$ the number of documents, $T$ the number of word types, $N_{dt}$ the number of words of type $t$ in document $d$, and $K_t$ the number of topics over words of type $t$.}
+  \end{figure}
+  \begin{algorithm}
 \begin{algorithmic}[1]
 \Procedure{MAD Generative Process}{}
- \State $T$ vocabularies, with $K_t$ topics. $D$ Documents, labelled into $A$ classes, with $T$ separate word counts for each of the $T$ vocabularies. Classification parameter $\eta_t \in \mathbb{R}^n$
+ \State $T$ word types, with $K_t$ topics. $D$ documents, labelled into $A=$ classes, with $T$ separate word counts for each of the $T$ word types. Softmax parameter $\eta_t \in \mathbb{R}^{(A-1)\times\sum_{t=1}^TK_t}$, dirichlet priors $\{\alpha_{at}\}$ and $\{\lambda_t\}$
  	
- \For{For Each Vocabulary t}
+ \For{Each Word Type $t$}
  	\State Fix vocabulary dirichlet $\lambda_t$. Draw $K_t$ topics $\beta_{tk}\sim \text{Dirichlet}(\lambda_{t})$
  \EndFor
- \For{Each author $a$}
- 	\For{each word type $t$}
+ \For{Each Author $a$}
+ 	\For{Each Word Type $t$}
  	 	\State Fix author topic proportions $\alpha_{at}$
  	\EndFor
  	\For{For each document $d$ written by author $a$}
@@ -145,6 +178,17 @@ The model was implemented in C++, and based upon Chong Wang's code accompanying 
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
+\newpage
+\bibliography{writeup}
+\bibliographystyle{plainnat}
+
+\newpage
+
+\begin{appendix}
+\section{Scrapers}
+\section{Meter Algorithm}
+\section{}
+
 
 \end{appendix}
 
