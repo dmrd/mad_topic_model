@@ -87,7 +87,7 @@ We incorporated six different stylometric features, each of which was composed i
 \item Syllables-per-word (i.e., `3' for ``continue"), again looked-up in the CMU Pronouncing Dictionary \citep{Lenzo}.
 \item Syllable counts, i.e., the total number of syllables between pieces of punctuation.
 \item Word counts, i.e., the total number of words between pieces of punctuation.
-\end{enumerate}On top of these primitives, we also developed an algorithm to extract meter, which is outlined in Section~\ref{appendix:meter} of the Appendix. In total, this composed seven stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $6$-grams were produced).
+\end{enumerate}On top of these primitives, we also developed an algorithm to extract meter, which is outlined in Section~\ref{appendix:meter} of the Appendix. In total, this composed seven stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $8$-grams were produced, as described in the Appendix).
 
 For illustrative purposes, Table~\ref{tab:sample_ngrams} presents several common stylistic $n$-grams and corresponding examples drawn from a Quora post by Yishan Wong, the CEO of Reddit. Notice that our feature extraction heuristics correctly identify ``Bitcoin" as a two-syllable word (despite the fact that it is not in the CMU Pronouncing Dictionary). Similarly, the etymology of ``stated" (Latin) was deduced by looking up its root, ``state"; as was the etymology of ``aims" (Old French) by looking up its root, ``aim".
 
@@ -265,7 +265,9 @@ anchor=north,legend columns=-1},
 \section{Meter}
 \label{appendix:meter}
 
-Our algorithm for meter extraction is inspired by \citet{Genzel}. While meter is traditionally a poetic quality (and is treated as such in \citep{Genzel}), we brought it to prose by focusing on the classical meter styles of Iambic, Spondee, etc., all of which are based on 2- or 3-syllable `feet'. We viewed meter as a function of stresses and specifically focused on the stress $(2\times3)=6$-grams, appending these $6$-grams with two additional bits: the first to indicate distance from the latest comma, and the second to indicate distance from the latest piece of punctuation.
+Our algorithm for meter extraction is inspired by \citet{Genzel}. While meter is traditionally a poetic quality (and is treated as such in \citep{Genzel}), we brought it to prose by focusing on the classical meter styles of Iambic, Spondee, etc., all of which are based on 2- or 3-syllable `feet'. We viewed meter as a function of stresses and specifically focused on the stress $(2\times3)=6$-grams, appending these $6$-grams with two additional bits: the first to indicate distance from the latest comma, and the second to indicate distance from the latest piece of punctuation, both taken modulo 2.
+
+In summary, we evaluate meter by producing $8$-grams: the first $6$ entries in the $8$-gram are the relevant per-syllable stresses, and the last two entries indicate even or odd positioning relative to the nearest comma or other piece of punctuation.
 
 \section{Model Discussion}
 \label{appendix:model}
