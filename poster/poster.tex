@@ -195,26 +195,26 @@ We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $
     \node[main, fill = black!10] (w) [right=of z] {$w$};
     \node[main] (beta) [above=of z]{$\beta$};
     \node[main] (lambda) [left=of beta]{$\lambda$};
-    \node[main] (y) [right=of w, fill = white!100, xshift = -6mm]{$y$};
-    \node[main] (eta) [above=of y, xshift = 28mm,yshift=-2mm]{$\eta$};
+    \node[main, fill = white!] (y) [below=of z,  yshift = -16mm]{$y$};
+    \node[main] (eta) [left=of y, xshift = -38mm]{$\eta$};
     \path (alpha) edge [connect] (theta)
           (theta) edge [connect] (z)
           (z) edge [connect] (w)
           (lambda) edge [connect] (beta)
           (beta) edge [connect] (w)
           (eta) edge [connect] (y)
-          (w) edge [connect] (y);
-    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:N, yshift = 10mm, xshift=3mm] {};
+          (z)   edge [connect] (y);
+    %\draw[->] (z.east) to  [out=-50,in=-130] (y.west) ;
+    \node[rectangle, inner sep=8mm, fit= (z) (w),label=below right:$N_d$, yshift = 10mm, xshift=-3mm] {};
 	\node[rectangle, inner sep=8mm,draw=black!100, fit= (z) (w), yshift = -6mm] {};
 	 \node[rectangle, inner sep=8mm, fit= (beta),label=above right:k, yshift = -14mm, xshift=-15mm] {};
 	\node[rectangle, inner sep=8mm,draw=black!100, fit= (beta), yshift = 2mm] {};
-	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=below:M, yshift = 4mm, xshift=-50.5mm] {};
-	\node[rectangle, inner sep=16mm, draw=black!100, fit = (theta) (z) (y) (w), yshift = -12mm, xshift=16] {};
-	\node[rectangle, inner sep=20mm, fit= (alpha) (theta) (z) (w) (y),label=below left:A, yshift = 8mm, xshift=-40mm] {};
-	\node[rectangle, inner sep=20mm, draw=black!100, fit = (alpha) (theta) (z) (w) (y), yshift = -13mm, xshift=16] {};
-	\node[rectangle, inner sep=28mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -30mm, xshift=65] {};
-
-	\node[rectangle, inner sep=28mm, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -13mm, xshift=16] {};
+	\node[rectangle, inner sep=16mm, fit= (theta) (z) (w) (y),label=right:D, yshift = -35mm, xshift=-15mm] {};
+	\node[rectangle, inner sep=16mm,minimum height = 250, draw=black!100, fit = (theta) (z) (w), yshift = -27mm, xshift=16] {};
+	\node[rectangle, inner sep=24mm, fit= (alpha) (theta) (z) (w) ,label=left:A, yshift = -28mm, xshift=0mm] {};
+	\node[rectangle, inner sep=16mm, minimum width = 600, draw=black!100, fit = (alpha) (theta) (z) (w) , yshift = -13mm, xshift=-20] {};
+	\node[rectangle, inner sep=20mm, fit = (lambda) (beta) (alpha) (theta) (z) (w), label=above right:T, yshift = -40mm, xshift=45] {};
+	\node[rectangle, inner sep=16mm, minimum width = 250, draw=black!100, fit = (lambda) (beta) (alpha) (theta) (z) (w), yshift = -2mm, xshift=4] {};
 
     %\node[rectangle, inner sep=4.4mm, draw=black!100, fit= (x) (iota)  (beta) (r) ,label=below right:N,yshift=-3mm ] {};
     %\node[rectangle, inner sep=3.0mm, draw=black!100, fit= (x) ,label=below left:K] {};
