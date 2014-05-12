@@ -55,7 +55,7 @@
 \maketitle
 \large
 \begin{abstract}
-The Multivalent Authorship Detection (MAD) Topic Model extends Latent Dirichlet Allocation \citep{Blei2003} to identify authorship in documents with many separate types (``multivalent'') of count features. MAD is ``doubly supervised'': it includes a multi-class logistic regression and also fits per-author Dirichlet distributions for each feature type. The topic model approach allows MAD to be used both for classification of documents and exploration of stylistic features. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
+We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $n$-gram features (e.g., part-of-speech tags, meter) to extract distinctive features about author style. MAD fits separate topic models to each of these $n$-gram vocabularies and combines the models through a multi-class logistic regression classifier. MAD breaks stylistic features into topics topics over vocabularies, creating a compact representation of stylistic tendency among different authors. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths.
 \end{abstract}
 
 \section{Introduction}
