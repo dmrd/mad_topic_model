@@ -1,4 +1,4 @@
-# Badger
+# MAD Badger
 
 Wordless authorship recognition using topic models.
 
