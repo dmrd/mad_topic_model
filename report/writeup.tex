@@ -79,10 +79,10 @@ The Nassau Weekly is a student-run humor/culture newspaper. Our dataset features
 
 We incorporated six different stylometric features, each of which was composed into $n$-grams of varying sizes before being fed into the model:
 \begin{enumerate}
-\item Part-of-Speech (POS) tags (e.g., `Noun' for the word ``apple''). The Penn-Treebank tag set was used, and tagging itself was performed using the Maximum Entropy approach of \citet{Ratnaparkhi}.
-\item Etymological tags (e.g., `Old English' for the word ``great''). Etymological information was scraped from \textit{Webster's} Dictionary \citep{Dictionary}. As etymology is inherently root-based, words absent from the dataset were first stemmatized using the method of \citet{Porter} and lemmatized using the WordNet method of \citet{Fellbaum}. If either of the results returned were present in the dictionary, their corresponding etymological tag was returned. Else, the entry with minimum Levenshtein distance \citep{Levenshtein} was used instead.
+\item Part-of-Speech (POS) tags (e.g., `Noun' for the word ``apple''). The Penn-Treebank tag set was used, and tagging was performed using a Maximum Entropy approach \citep{Ratnaparkhi}.
+\item Etymological tags (e.g., `Old English' for the word ``great''). Etymological information was scraped from \textit{Webster's} Dictionary \citep{Dictionary}. As etymology is inherently root-based, words absent from the dataset were first stemmatized using the method of \citet{Porter} and lemmatized using the WordNet method of \citet{Fellbaum}. If either of these roots were present in the dictionary, their corresponding etymological tag was returned. Else, the entry with minimum Levenshtein distance \citep{Levenshtein} was used instead.
 \item Syllables-per-word (i.e., `3' for ``continue"). Syllables were extracted from the CMU Pronouncing Dictionary \citep{Lenzo}. As with etymology, words absent from the dictionary were looked up by minimizing Levenshtein distance with the present keys.
-\item Syllable counts, i.e., the total number of syllables between pieces of punctuation.
+\item Syllable counts, i.e., the total number of syllables between pieces of punctuation, along with the separating punctuation marks.
 \item Word counts, i.e., the total number of words between pieces of punctuation.
 \end{enumerate}On top of these primitives, we also developed an algorithm to extract meter, which is outlined in Section~\ref{appendix:meter} of the Appendix. In total, this composed six stylometric features. For each document, we extracted these features and generated the relevant $2$-, $3$-, and $4$-grams (apart from meter, for which only $8$-grams were produced, as described in the Appendix).
 
