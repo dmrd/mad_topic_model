@@ -5,15 +5,15 @@ Wordless authorship recognition using topic models. MAD implements a multivalent
 
 ## Dependencies
 
-See requirements.txt for Python dependencies.
+See requirements.txt for a list of Python dependencies.
 
-In addition, the following NLTK libraries are required:
+In addition, the following NLTK libraries are required for feature extraction:
 
 - cmudict
 - punkt
 - maxent_treebank_pos_tagger
 
-The GSL library for C++ is required.
+Finally, the GSL library for C++ is necessary for running the actual MAD model.
 
 ## Data
 
