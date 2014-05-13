@@ -53,7 +53,7 @@
 \maketitle
 \large
 \begin{abstract}
-We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $n$-gram features (e.g., part-of-speech tags, meter) to extract the distinctive qualities of author style. MAD fits separate topic models to each of these $n$-gram vocabularies and combines the models through a multi-class logistic regression classifier. MAD breaks stylistic features into topics over vocabularies, creating a compact representation of stylistic tendency among different authors. We test the MAD Topic Model on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths. All relevant code, including the topic model, feature extractors, and data can be found on \href{https://github.com/dmrd/mad_topic_model}{GitHub}.
+We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $n$-gram features (e.g., part-of-speech tags, meter) to extract the distinctive qualities of author style. MAD fits separate topic models to each of these $n$-gram vocabularies and combines the models through a multi-class logistic regression classifier. MAD breaks stylistic features into topics over vocabularies, creating a compact representation of stylistic tendency among different authors. We test MAD on several real world corpora using a variety of $n$-gram features, including part-of-speech, syllable stress, and sequences of word lengths. All relevant code, including the topic model, feature extractors, and data can be found on \href{https://github.com/dmrd/mad_topic_model}{GitHub}.
 \end{abstract}
 
 \section{Introduction}
@@ -119,7 +119,7 @@ For each of the three corpora, we tested the classification accuracy sLDA agains
 
 \section{Exploration}
 
-While MAD did not perform particularly well for classification, it's true usefulness is its exploratory capabilities: by creating topic models over vocabularies of $n$-gram stylistic features, MAD helps uncover hidden syntactic and stylometric structure across authors.
+While MAD did not perform particularly well for classification, it's true usefulness is its exploratory capabilities: by creating topic models over vocabularies of $n$-gram stylistic features, MAD helps uncover the hidden stylometric structure of authors' writing styles.
 
 To visualize the generated topic models, we adapted the Termite tool \citep{Termite}, which allowed us to see the marginal distributions of the various $n$-grams (for a given word type, such as part-of-speech tag) as well as the distributions of the vocabularies across the topics.
 
