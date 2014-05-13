@@ -60,7 +60,7 @@ We present the \textit{MAD Topic Model}, which uses  syntactic and stylometric $
 
 \section{Introduction}
 
-In the \textit{authorship detection} problem, one is first given a set of documents labeled (by author) on which to train, and then asked to identify authors of anonymized text snippets \citep{Stein}. Accurate author classification is typically used for such tasks as plagiarism identification \cite{stamatatos2009intrinsic} \cite{Stein}. However, the approaches used typically fail to produce interpretable descriptions of author styles. By approaching the authorship detection problem from a topic model perspective, we provide a multivalent sLDA algorithm that both classifies anonymized text and creates a compact representation of author style.
+In the \textit{authorship detection} problem, one is first given a set of documents labeled (by author) on which to train, and then asked to identify authors of anonymized text snippets \citep{Stein}. Accurate author classification is typically used for such tasks as plagiarism identification \cite{stamatatos2009intrinsic, Stein}. However, the approaches used typically fail to produce interpretable descriptions of author styles. By approaching the authorship detection problem from a topic model perspective, we provide a multivalent sLDA algorithm that both classifies anonymized text and creates a compact representation of author style.
 
 \section{Literature Review}
 
@@ -115,7 +115,7 @@ The model is fit using variational inference \cite{wainwright2008graphical} whic
 
 \section{Evaluation}
 
-Our implementation of MAD extended Wang's sLDA implementation by 1000 lines of C++, so preliminary testing focused on establishing the algorithm's correctness. First, we ensured that our model likelihood increases during variational inference. Next, we simulated documents according to our generative process, and verified that we could classify such documents with 100\% accuracy, provided that each document had a fairly distinct distribution over topics. 
+Our implementation of MAD extended Wang's sLDA implementation by 1000 lines of C++, so preliminary testing focused on establishing the algorithm's correctness. First, we ensured that our model likelihood increases during variational inference. Next, we simulated documents according to our generative process, and verified that we could classify such documents with 100\% accuracy, provided that each document had a fairly distinct distribution over topics. MAD's performance on this artificial data can be seen in Figure~\ref{fig:sanity check}. 
 
 For each of the three corpora, we tested the classification accuracy sLDA against an 80/20 train/test split. We restricted our tests to authors above a certain threshold of documents, with this threshold varying by corpus. As a benchmark, we tested sLDA against Random Forest, Logistic Regression, and SVMs, applied to the $n$-grams representations of each document. In each test, sLDA significantly outperformed random guessing, but underperformed compared to the other benchmark methods. Full results can be seen in Figure~\ref{fig:results} on Page~\pageref{fig:results}.
 
@@ -156,16 +156,18 @@ Further analysis could be performed on and across the topic models for part-of-s
 \begin{figure}
 \centering
 \includegraphics[width=0.5\linewidth]{termite.png}
-\caption{Termite visualization for `runs of syllables' $n$-grams on the Gutenberg corpus. The $x$-axis indicates topic indices, while the $y$-axis indicate $n$-grams. Size of circle corresponds to $n$-gram importance within a topic. Austen's primary topic (0) is highlighted in blue, with Twain's (27) in orange.}
+\caption{Termite visualization for `runs of syllables' 4-grams on the Gutenberg corpus. The $x$-axis indicates topic indices, while the $y$-axis indicate $n$-grams. Size of circle corresponds to $n$-gram importance within a topic. Austen's primary topic (0) is highlighted in blue, with Twain's (27) in orange.}
 \label{fig:termite}.
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.6\linewidth]{termite2.png}
-\caption{Termite visualization for etymology $4$-grams on the Gutenberg corpus. Here we deleted the top 10 most common $4$-grams because these were very common among all authors. Topics 7 and 13 account for 40\% of  Austen's writing, while 9,11,12 and 29 account for 40\% of Twain's text. Note that the two are quite similar, reflecting that the vast majority of English users rely on Old English (OE) and Anglo Saxon (AS) words. The similar etymology also reflects both Austin and Twain's rather colloquial tone, as OE and AS words are regarded as more casual. When they do use the ``fancier'' latinate words, Austen tends to use latin words consecutively, whereas Twain's more casual diction separates latin words with OE and AS. While many scholars do not distinguish between OE and AS, the Merrian Webster dictionary we scraped tends to label ``connecting words'' - against, the, but - as AS. Moreso than Twain, Austen's seeming to enjoy using 3 consecutive AS words, reflecting her longer phrases. Austen also enjoys the 3-OE-word construction ``was to be''}
+\caption{Termite visualization for etymology $4$-grams on the Gutenberg corpus. The top 10 most common $4$-grams were removed as they were very common among all authors. Topics 7 and 13 account for 40\% of  Austen's writing, while 9, 11, 12, and 29 account for 40\% of Twain's. The two are quite similar, reflecting that the vast majority of English users rely on Old English (OE) and Anglo Saxon (AS) words (some scholars do not distinguish between these etymologies). This similarity also reflects Austen and Twain's colloquial tones (OE and AS words are regarded as more casual). When the authors choose to use ``fancier'' latinate (L) words, Austen tends to use them consecutively, whereas Twain's more casual diction separates L words with OE and AS. Austen (more-so than Twain) enjoys using triplets of AS words, reflecting her longer phrases.}
 \label{fig:termite2}.
 \end{figure}
+
+\clearpage
 
 \begin{figure}
   \centering
@@ -204,9 +206,8 @@ Further analysis could be performed on and across the topic models for part-of-s
   \label{fig:gm}
   \end{figure}
 
-
-
 \begin{algorithm}
+\vspace{1mm}
 \begin{algorithmic}[1]
 \label{Algorithm}
 \Procedure{MAD Generative Process}{}
@@ -265,10 +266,12 @@ anchor=north,legend columns=-1},
 \end{figure}
 
 \begin{figure}
+\centering
 \begin{tikzpicture}
 \begin{axis}[
-xlabel=Smoothing factor,
-ylabel=4 class classification accuracy
+xlabel=Smoothing Factor,
+ylabel=Classification Accuracy (\%),
+title=Classification Accuracy on Artificial Data (4 Classes)
 ]
 \addplot+[sharp plot] coordinates
 {
@@ -283,9 +286,8 @@ ylabel=4 class classification accuracy
 };
 \end{axis}
 \end{tikzpicture}
-\caption{We test the MAD Topic Model classification on 50/50 test train split using articial data generated by Algorithm 1 Here, the per-author topic dirichlet parameter vectors $\alpha$ have entries of the form $\alpha_i = \beta_i + c$, where $\beta_i \sim \text{Unif}(0,1)$ and $c$ is a smoothing factor. If $x\sim \text{Dirichlet}(\alpha)$, then $\mathbb{E}[x|\alpha] = \frac{c+\beta_{i}}{nc+\sum_{i}\beta_i}$, which tends to $1/n$ as $c\to\infty$. That is, increasing values of $c$ make it harder to tell per-author distributions apart. }
+\caption{MAD's classification accuracy with a 50/50 test/train split using artificial data generated by Algorithm~\ref{fig:mad}. The per-author topic Dirichlet parameter vectors $\alpha$ have entries of the form $\alpha_i = \beta_i + c$, where $\beta_i \sim \text{Unif}(0,1)$ and $c$ is a smoothing factor. If $x\sim \text{Dirichlet}(\alpha)$, then $\mathbb{E}[x|\alpha] = \frac{c+\beta_{i}}{nc+\sum_{i}\beta_i}$, which tends to $1/n$ as $c\to\infty$ (i.e., increasing values of $c$ make it harder to tell per-author distributions apart). }
 \label{fig:sanity check}
-
 \end{figure}
 
 \clearpage
